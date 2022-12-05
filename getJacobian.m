@@ -31,12 +31,12 @@ function j_matrix = getJacobian()
     phi_ddot = q_ddot(1);
     psi_dot = psi_dot;
     psi__ddot = q_ddot(2);
-    f = [x_dot y_dot theta_dot phi_ddot psi_dot psi__ddot]'
+    f = [x_dot y_dot theta_dot phi_ddot psi_dot psi__ddot]';
     %f = X + dt*f;
-    F = simplify(jacobian(f, X'))
-    T = simplify(jacobian(f, w_in'));
-    H = simplify(jacobian(h, X'));
-    M = simplify(jacobian(h, w_sens'));
+    F = simplify(jacobian(f', X'));
+    T = simplify(jacobian(f', w_in'));
+    H = simplify(jacobian(h', X'));
+    M = simplify(jacobian(h', w_sens'));
     
     j_matrix = struct();
     j_matrix.F = F;
