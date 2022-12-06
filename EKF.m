@@ -70,7 +70,11 @@ function  [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi)
     %T = double(subs(Jnum.T, old_f, new));
     
     f = state_function_f(new);
+    f(3) = wrapToPi(f(3));
+    f(5) = wrapToPi(f(5));
     x_hat = x_hat + dt*f;
+    x_hat(3) = wrapTo2Pi(x_hat(3));
+    x_hat(5) = wrapToPi(x_hat(5));
     P = F*P*F' + T*Q*T';
 end
 
@@ -84,6 +88,7 @@ function [x_hat, P, e] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, mea
     M = function_M(new);
     
     h = observation_model_h(new);
+    h(1) = wrapTo2Pi(h(1));
 
     %calcolo dell'innovazione
     e = [meas_psi; meas_phi_dot; meas_dx; meas_db] - h;
@@ -93,8 +98,12 @@ function [x_hat, P, e] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, mea
 
     %calcolo del guadagno di correzione
     L = P*H'*inv(S);
+
     %stima statica BLUE
     x_hat = x_hat + L*e;
+    x_hat(3) = wrapToPi(x_hat(3));
+    x_hat(5) = wrapToPi(x_hat(5));
+
     %calcolo della P con la forma di Joseph
     P = (eye(6) - L*H)*P*(eye(6) - L*H)' + L*M*R*M'*L';
     
