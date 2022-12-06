@@ -26,41 +26,68 @@ meas_sens_db = log_vars.meas_sens_db;
 
 k = 0;
 Jsym = getJacobian();
+f = Jsym.f;
+matlabFunction(f,'File','state_function_f','Vars',{old_f});
+%function_f = matlabFunction(f);
+
+h = Jsym.h;
+matlabFunction(h,'File','observation_model_h','Vars',{old_h});
+%function_h = matlabFunction(h);
+
+F = Jsym.F;
+matlabFunction(F,'File','function_F','Vars',{old_f});
+% function_F = matlabFunction(F);
+
+T = Jsym.T;
+matlabFunction(T,'File','function_T','Vars',{old_f});
+% function_T = matlabFunction(T);
+
+H = Jsym.H;
+matlabFunction(H,'File','function_H','Vars',{old_h});
+%function_H = matlabFunction(H);
+
+M = Jsym.M;
+matlabFunction(M,'File','function_M','Vars',{old_h});
+%function_M = matlabFunction(M);
 
 for t = dt:dt:t_max
 
     k = k + 1;
     %prediction step
-    [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k), Jsym, old_f);
+    [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k));
     %correction step
-    [x_hat, P,e] = correction_EKF(x_hat, P, R, meas_sens_psi(k), meas_sens_phi_dot(k), meas_sens_dx(k), meas_sens_db(k), Jsym, old_h);
+    [x_hat, P,e] = correction_EKF(x_hat, P, R, meas_sens_psi(k), meas_sens_phi_dot(k), meas_sens_dx(k), meas_sens_db(k));
     
 end
 
-function  [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi, Jsym, old_f)
+function  [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi)
     new = [x_hat; tau_phi; tau_psi; 0; 0; 0; 0; 0; 0]';
-    Jnum = Jsym;
-    F = double(subs(Jnum.F, old_f, new));
-    T = double(subs(Jnum.T, old_f, new));
+
+    % Calcolo dei jacobiani numerici
+    F = function_F(new);
+    %F = double(subs(Jnum.F, old_f, new));
+    T = function_T(new);
+    %T = double(subs(Jnum.T, old_f, new));
     
-    f = double(subs(Jnum.f, old_f, new));
+    f = state_function_f(new);
     x_hat = x_hat + dt*f;
     P = F*P*F' + T*Q*T';
-    %D = 
-    %f = X + log_vars.dt*f;
-
 end
 
-function [x_hat, P, e] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db, Jsym, old_h)
+function [x_hat, P, e] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db)
     new = [x_hat; 0; 0; 0; 0]';
-    Jnum = Jsym;
-    H = double(subs(Jnum.H, old_h, new));
-    M = double(subs(Jnum.M, old_h, new));
-    h = double(subs(Jnum.h, old_h, new));
     
+    % Calcolo dei jacobiani numerici
+    %H = double(subs(Jnum.H, old_h, new));
+    H = function_H(new);
+    %M = double(subs(Jnum.M, old_h, new));
+    M = function_M(new);
+    
+    h = observation_model_h(new);
+
     %calcolo dell'innovazione
     e = [meas_psi; meas_phi_dot; meas_dx; meas_db] - h;
-    e(1) = wrapToPi(e(1,1))
+    e(1,1) = wrapToPi(e(1,1))
     %calcolo della covarianza associata all'innovazione
     S = H*P*H' + M*R*M';
 

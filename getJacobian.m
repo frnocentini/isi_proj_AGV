@@ -31,8 +31,8 @@ function j_matrix = getJacobian()
     phi_ddot = q_ddot(1);
     psi_dot = psi_dot;
     psi__ddot = q_ddot(2);
-    f = [x_dot y_dot theta_dot phi_ddot psi_dot psi__ddot]';
-    %f = X + dt*f;
+    f_cont = [x_dot y_dot theta_dot phi_ddot psi_dot psi__ddot]';
+    f = X + dt*f_cont;   % funzione di stato f discretizzata
     F = simplify(jacobian(f', X'));
     T = simplify(jacobian(f', w_in'));
     H = simplify(jacobian(h', X'));
@@ -43,7 +43,6 @@ function j_matrix = getJacobian()
     j_matrix.T = T;
     j_matrix.H = H;
     j_matrix.M = M;
-    j_matrix.f = f;
+    j_matrix.f = f_cont;
     j_matrix.h = h;
-
 end
