@@ -1,48 +1,62 @@
 function j_matrix = getJacobian()
     global rp l L IPy D IPz Mv mp ma IAy ra d IGz IAz a b
-    syms x y theta phi_dot psi_ psi_dot %variabili di stato simboliche
-    X = [x y theta phi_dot psi_ psi_dot]';%vettore di stato simbolico
-    syms w_psi_ w_phi_dot w_dx w_db %rumore di misura simbolico
-    %syms a rp b L l IPy IPz mp ma D IAz IGz d ra IAy %altre variabili simboliche utili nel modello
-    syms tau_psi_s tau_phi_s %variabili di ingresso simboliche
-    syms w_tau_psi w_tau_phi %rumore simbolico sulle variabili di ingresso
-    
-    load('dataset')
-    dt = log_vars.dt;
+%     syms x y theta X(4) X(5) X(5)dot %variabili di stato simboliche
+%     X = [x y theta X(4) X(5) X(5)dot]';%vettore di stato simbolico
+%     syms V(1) V(2) w_dx w_db %rumore di misura simbolico
+%     %syms a rp b L l IPy IPz mp ma D IAz IGz d ra IAy %altre variabili simboliche utili nel modello
+%     syms tau_X(5)s tau_phi_s %variabili di ingresso simboliche
+%     syms w_tau_psi w_tau_phi %rumore simbolico sulle variabili di ingresso
 
-    w_in = [w_tau_phi w_tau_psi]';
-    w_sens = [w_psi_ w_phi_dot w_dx w_db]';
+%% Vettore di stato X = [x y theta phi_dot psi psi_dot]
+%Tau=[tau_phi tau_psi]  ingressi
+Tau=sym('tau',[2 1],'real');
 
-    %definizione della h (modello di osservazione)
-    %vettore di variabili misurate [psi_,phi_dot,dx,db]
-    h = [psi_+w_psi_,phi_dot+w_phi_dot,x+w_dx,sqrt((y^2)+(D-x)^2)+w_db]';
+%W = [w_tau_phi w_tau_psi]  disturbi di processo
+W = sym('w',[2 1],'real');
+
+%V=[v_psi v_phi_dot v_dx v_db] disturbi di misura
+V = sym('v',[4 1],'real');
+
+%X vettore di stato
+X = sym('x',[6 1],'real');
+
+load('dataset')
+dt = log_vars.dt;
+
+%     w_in = [w_tau_phi w_tau_psi]';
+%     w_sens = [V(1) V(2) w_dx w_db]';
+
+%definizione della h (modello di osservazione)
+%vettore di variabili misurate [X(5),X(4),dx,db]
+h = [X(5)+V(1),X(4)+V(2),X(1)+V(3),sqrt((X(2)^2)+(D-X(1))^2)+V(4)]';
+
+%definizione della f (funzione di transizione di stato) e sua
+%discretizzazione
+%Matrice della dinamica
+B=[a*rp^2*cos(X(5))^2+b*(rp/L)^2*sin(X(5))^2+IPy -IPz*(rp/L)*sin(X(5));-IPz*(rp/L)*sin(X(5)) IPz];
+C=[(rp^2*b/L^2-a*rp^2)*cos(X(5))*sin(X(5))*X(6)*X(4);-IPz*rp/L*cos(X(5))*X(6)*X(4)];
+q_ddot = inv(B)*([Tau(1) + W(1); Tau(2) + W(2)]-C);
     
-    %definizione della f (funzione di transizione di stato) e sua
-    %discretizzazione
-    %Matrice della dinamica
-    B=[a*rp^2*cos(psi_)^2+b*(rp/L)^2*sin(psi_)^2+IPy -IPz*(rp/L)*sin(psi_);-IPz*(rp/L)*sin(psi_) IPz];
-    C=[(rp^2*b/L^2-a*rp^2)*cos(psi_)*sin(psi_)*psi_dot*phi_dot;-IPz*rp/L*cos(psi_)*psi_dot*phi_dot];
-    q_ddot = inv(B)*([tau_phi_s + w_tau_phi; tau_psi_s + w_tau_psi]-C);
-    
-    %X_dot
-    x_dot = rp*phi_dot*cos(theta)*cos(psi_);
-    y_dot = rp*phi_dot*sin(theta)*cos(psi_);
-    theta_dot = -rp*phi_dot*sin(psi_)/L;
-    phi_ddot = q_ddot(1);
-    psi_dot = psi_dot;
-    psi__ddot = q_ddot(2);
-    f_cont = [x_dot y_dot theta_dot phi_ddot psi_dot psi__ddot]';
-    f = X + dt*f_cont;   % funzione di stato f discretizzata
-    F = simplify(jacobian(f', X'));
-    T = simplify(jacobian(f', w_in'));
-    H = simplify(jacobian(h', X'));
-    M = simplify(jacobian(h', w_sens'));
-    
-    j_matrix = struct();
-    j_matrix.F = F;
-    j_matrix.T = T;
-    j_matrix.H = H;
-    j_matrix.M = M;
-    j_matrix.f = f_cont;
-    j_matrix.h = h;
+%X_dot
+x1_dot = rp*X(4)*cos(X(3))*cos(X(5));
+x2_dot = rp*X(4)*sin(X(3))*cos(X(5));
+x3_dot = -rp*X(4)*sin(X(5))/L;
+x4_dot = q_ddot(1);
+x5_dot = X(6);
+x6_dot = q_ddot(2);
+f_cont = [x1_dot x2_dot x3_dot x4_dot x5_dot x6_dot]';
+f_disc = X + dt*f_cont;
+F = simplify(jacobian(f_disc, X));
+T = simplify(jacobian(f_disc, W));
+H = simplify(jacobian(h, X));
+M = simplify(jacobian(h, V));
+
+j_matrix = struct();
+j_matrix.F = F;
+j_matrix.T = T;
+j_matrix.H = H;
+j_matrix.M = M;
+j_matrix.f = f_cont;
+j_matrix.h = h;
+
 end
