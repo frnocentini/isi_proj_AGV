@@ -67,8 +67,8 @@ for t = dt:dt:t_max
     [x_hat(:,k+1), P] = prediction_EKF(x_hat(:,k), P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k), Jsym, old_f);
 
     %correction step
-    [x_hat(:,k+1), P] = correction_EKF(x_hat(:,k+1), P, R, meas_sens_psi(k), meas_sens_phi_dot(k), meas_sens_dx(k), ...
-                                        meas_sens_db(k), Jsym, old_h);
+    [x_hat(:,k+1), P] = correction_EKF(x_hat(:,k+1), P, R, meas_sens_psi(k+1), meas_sens_phi_dot(k+1), meas_sens_dx(k+1), ...
+                                        meas_sens_db(k+1), Jsym, old_h);
 
     k = k + 1;
 end
@@ -81,12 +81,12 @@ end
 [psi_estimation] = [x_hat(5,:)]';
 [psi_dot_estimation] = [x_hat(6,:)]';
 
-log_vars.x_estimation = [x_estimation];
-log_vars.y_estimation = [y_estimation];
-log_vars.theta_estimation = [theta_estimation];
-log_vars.phi_dot_estimation = [phi_dot_estimation];
-log_vars.psi_estimation = [psi_estimation];
-log_vars.psi_dot_estimation = [psi_dot_estimation];
+log_vars.x_estimation_EKF = [x_estimation];
+log_vars.y_estimation_EKF = [y_estimation];
+log_vars.theta_estimation_EKF = [theta_estimation];
+log_vars.phi_dot_estimation_EKF = [phi_dot_estimation];
+log_vars.psi_estimation_EKF = [psi_estimation];
+log_vars.psi_dot_estimation_EKF = [psi_dot_estimation];
 
 save('dataset','log_vars');
 
