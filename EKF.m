@@ -35,12 +35,6 @@ meas_sens_psi = log_vars.meas_sens_psi;
 meas_sens_phi_dot = log_vars.meas_sens_phi_dot;
 meas_sens_dx = log_vars.meas_sens_dx;
 meas_sens_db = log_vars.meas_sens_db;
-% x_real = log_vars.x;
-% y_real = log_vars.y;
-% theta_real = log_vars.theta;
-% phi_dot_real = log_vars.phi_dot;
-% psi_real = log_vars.psi;
-% psi_dot_real = log_vars.psi_dot;
 
 % Funzioni simboliche per il calcolo della funzione di stato, del modello
 % di misura e dei rispettivi jacobiani:
@@ -71,76 +65,32 @@ for t = dt:dt:t_max
 
     %prediction step
     [x_hat(:,k+1), P] = prediction_EKF(x_hat(:,k), P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k), Jsym, old_f);
-%     [fun(k)]=f(1);
 
     %correction step
-    [x_hat(:,k+1), P,e,h] = correction_EKF(x_hat(:,k+1), P, R, meas_sens_psi(k), meas_sens_phi_dot(k), meas_sens_dx(k), meas_sens_db(k), Jsym, old_h);
-%     [x_stimato(k)]=x_hat(1);
-%     [y_stimato(k)]=x_hat(2);
-%     [theta_stimato(k)]=x_hat(3);
-%     [phi_dot_stimato(k)] = x_hat(4);
-%     [psi_stimato(k)] = x_hat(5);
-%     [psi_dot_stimato(k)] = x_hat(6);
-%     [oss(k)]=h(3);
+    [x_hat(:,k+1), P] = correction_EKF(x_hat(:,k+1), P, R, meas_sens_psi(k), meas_sens_phi_dot(k), meas_sens_dx(k), ...
+                                        meas_sens_db(k), Jsym, old_h);
 
     k = k + 1;
 end
 
-% [x_stima]=[x_stimato]';
-% [y_stima]=[y_stimato]';
-% [theta_stima] = [theta_stimato]';
-% [phi_dot_stima] = [phi_dot_stimato]';
-% [psi_stima] = [psi_stimato]';
-% [psi_dot_stima] = [psi_dot_stimato]';
-% 
-% subplot(6,1,1)
-% plot(x_real,'b');
-% hold on;
-% plot(x_stima,'r');
-% hold off;
-% legend('xreale','xstimata');
-% xlim([0,400]); ylim([0,20]);
-% 
-% subplot(6,1,2)
-% plot(y_real,'b');
-% hold on;
-% plot(y_stima,'r');
-% hold off;
-% legend('yreale','ystimata');
-% xlim([0,400]); ylim([0,20]);
-% 
-% subplot(6,1,3)
-% plot(theta_real,'b');
-% hold on;
-% plot(theta_stima,'r');
-% hold off;
-% legend('thetaReale','thetaStimato');
-% xlim([0,400]); ylim([0,20]);
-% 
-% subplot(6,1,4)
-% plot(phi_dot_real,'b');
-% hold on;
-% plot(phi_dot_stima,'r');
-% hold off;
-% legend('phi_dotreale','phi_dotstimata');
-% xlim([0,400]); ylim([0,20]);
-% 
-% subplot(6,1,5)
-% plot(psi_real,'b');
-% hold on;
-% plot(psi_stima,'r');
-% hold off;
-% legend('psireale','psistimata');
-% xlim([0,400]); ylim([0,20]);
-% 
-% subplot(6,1,6)
-% plot(psi_dot_real,'b');
-% hold on;
-% plot(psi_dot_stima,'r');
-% hold off;
-% legend('psidotReale','psidotStimata');
-% xlim([0,400]); ylim([0,20]);
+% Salvataggio sul dataset delle variabili per i plot
+[x_estimation]=[x_hat(1,:)]';
+[y_estimation]=[x_hat(2,:)]';
+[theta_estimation] = [x_hat(3,:)]';
+[phi_dot_estimation] = [x_hat(4,:)]';
+[psi_estimation] = [x_hat(5,:)]';
+[psi_dot_estimation] = [x_hat(6,:)]';
 
+log_vars.x_estimation = [x_estimation];
+log_vars.y_estimation = [y_estimation];
+log_vars.theta_estimation = [theta_estimation];
+log_vars.phi_dot_estimation = [phi_dot_estimation];
+log_vars.psi_estimation = [psi_estimation];
+log_vars.psi_dot_estimation = [psi_dot_estimation];
+
+save('dataset','log_vars');
+
+% Funzioni:
 function  [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi, Jsym, old_f)
     % Calcolo dei jacobiani numerici:
     new = [x_hat; tau_phi; tau_psi; 0; 0; 0; 0; 0; 0];
