@@ -21,6 +21,12 @@ old_h = [X;V];
 
 % Caricamento del dataset:
 load('dataset')
+dt = log_vars.dt;
+t_max = log_vars.t_max;
+meas_sens_psi = log_vars.meas_sens_psi;
+meas_sens_phi_dot = log_vars.meas_sens_phi_dot;
+meas_sens_dx = log_vars.meas_sens_dx;
+meas_sens_db = log_vars.meas_sens_db;
 
 x_hat = log_vars.X_hat;     % stima iniziale
 P = log_vars.P;             % matrice di covarianza associata
@@ -28,13 +34,6 @@ P = log_vars.P;             % matrice di covarianza associata
 Q = diag([log_vars.std_dev_tau_phi^2, log_vars.std_dev_tau_psi^2]); %matrice di disturbo di processo
 R = diag([log_vars.std_dev_psi^2, log_vars.std_dev_phi_dot^2, ...
           log_vars.std_dev_dx^2, log_vars.std_dev_db^2]); %matrice di errore di misura
-
-dt = log_vars.dt;
-t_max = log_vars.t_max;
-meas_sens_psi = log_vars.meas_sens_psi;
-meas_sens_phi_dot = log_vars.meas_sens_phi_dot;
-meas_sens_dx = log_vars.meas_sens_dx;
-meas_sens_db = log_vars.meas_sens_db;
 
 % Funzioni simboliche per il calcolo della funzione di stato, del modello
 % di misura e dei rispettivi jacobiani:
@@ -73,7 +72,7 @@ for t = dt:dt:t_max
     k = k + 1;
 end
 
-% Salvataggio sul dataset delle variabili per i plot
+% Salvataggio nel dataset delle variabili per i plot
 [x_estimation]=[x_hat(1,:)]';
 [y_estimation]=[x_hat(2,:)]';
 [theta_estimation] = [x_hat(3,:)]';
