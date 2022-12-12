@@ -33,19 +33,23 @@ meas_sens_phi_dot = log_vars.meas_sens_phi_dot;
 meas_sens_dx = log_vars.meas_sens_dx;
 meas_sens_db = log_vars.meas_sens_db;
 
-k = 1;
+% Funzioni simboliche per il calcolo della funzione di stato e del modello
+% di misura:
 Jsym = getJacobian();
-%f = Jsym.f;
-%function_f = matlabFunction(f, 'File','state_function_f','Vars',{old_f});
-%h = Jsym.h;
-%function_h = matlabFunction(h);
+% Funzione di stato f simbolica
+f = Jsym.f;
+matlabFunction(f,'File','state_function_f_UKF','Vars',{old_f});
+% Modello di misura h simbolico
+h = Jsym.h;
+matlabFunction(h,'File','observation_model_h_UKF','Vars',{old_h});
+
+k = 1;
 for t = dt:dt:t_max
 
     %prediction step
-    [x_hat(:,k+1), P] = prediction_UKF(x_hat(:,k), P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k), Jsym, old_f);
-    %correction step
+    [x_hat(:,k+1), P] = prediction_UKF(x_hat(:,k), P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k));    %correction step
     [x_hat(:,k+1), P, e(:,k+1)] = correction_UKF(x_hat(:,k+1), P, R, meas_sens_psi(k+1), meas_sens_phi_dot(k+1), meas_sens_dx(k+1), ...
-        meas_sens_db(k+1), Jsym, old_h);
+        meas_sens_db(k+1));
 
     k = k + 1;
 end
@@ -58,22 +62,22 @@ end
 [psi_estimation] = [x_hat(5,:)]';
 [psi_dot_estimation] = [x_hat(6,:)]';
 
-log_vars.x_estimation_UKF = [x_estimation];
-log_vars.y_estimation_UKF = [y_estimation];
-log_vars.theta_estimation_UKF = [theta_estimation];
-log_vars.phi_dot_estimation_UKF = [phi_dot_estimation];
-log_vars.psi_estimation_UKF = [psi_estimation];
-log_vars.psi_dot_estimation_UKF = [psi_dot_estimation];
+log_vars.x_estimation_UKF = x_estimation;
+log_vars.y_estimation_UKF = y_estimation;
+log_vars.theta_estimation_UKF = theta_estimation;
+log_vars.phi_dot_estimation_UKF = phi_dot_estimation;
+log_vars.psi_estimation_UKF = psi_estimation;
+log_vars.psi_dot_estimation_UKF = psi_dot_estimation;
 log_vars.innovation_UKF = [e];
 
 save('dataset','log_vars');
 
 
-function  [x_hat, P] = prediction_UKF(x_hat, P, Q, dt, tau_phi, tau_psi, Jsym, old_f)
-    [x_hat, P] = UT_F([x_hat; 0; 0], blkdiag(P, Q), dt, tau_phi, tau_psi, Jsym, old_f);
+function  [x_hat, P] = prediction_UKF(x_hat, P, Q, dt, tau_phi, tau_psi)
+    [x_hat, P] = UT_F([x_hat; 0; 0], blkdiag(P, Q), dt, tau_phi, tau_psi);
 end
 
-function [sample_mean, sample_cov] = UT_F(prior_mean, prior_cov, dt, tau_phi, tau_psi, Jsym, old_f)
+function [sample_mean, sample_cov] = UT_F(prior_mean, prior_cov, dt, tau_phi, tau_psi)
     
     % Parametri dell'algoritmo SUT che descrivono quanto sono scalati i
     % sigma point simmetrici rispetto al valore centrale
@@ -106,14 +110,15 @@ function [sample_mean, sample_cov] = UT_F(prior_mean, prior_cov, dt, tau_phi, ta
     sigma_points = prior_mean; %Il sigma point centrale corrisponde alla media a priori
     for i = 1:size(GAMMA,2)
         ai = sqrt(n/(1-w0));
-        sigma_points(:,i+1)      = prior_mean + ai*GAMMA(:,i); %sigma point a destra di quello centrale (i>0)
+        sigma_points(:,i+1) = prior_mean + ai*GAMMA(:,i); %sigma point a destra di quello centrale (i>0)
         sigma_points(:,i+1+n) = prior_mean - ai*GAMMA(:,i); %sigma point a sinistra di quello centrale (i<0)
     end
 
     %Calcolo dei sigma points propagati
     for i = 1:size(sigma_points,2)
         new = [sigma_points(:,i); tau_phi; tau_psi];
-        propagated_sigmapoints(1:6,i) = sigma_points(1:6,i) + dt*double(subs(Jsym.f, old_f, new)); 
+        %propagated_sigmapoints(1:6,i) = sigma_points(1:6,i) + dt*double(subs(Jsym.f, old_f, new)); % calcolo con subs
+        propagated_sigmapoints(1:6,i) = sigma_points(1:6,i) + dt*state_function_f_UKF(new); % calcolo con matlabFunction
     end
 
     %Media campionaria
@@ -131,8 +136,8 @@ function [sample_mean, sample_cov] = UT_F(prior_mean, prior_cov, dt, tau_phi, ta
 end
 
 
-function [x_hat, P, e] = correction_UKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db, Jsym, old_h)
-    [hat_y, S, Pxy] = UT_H(x_hat, P, meas_psi, meas_phi_dot, meas_dx, meas_db, Jsym, old_h);
+function [x_hat, P, e] = correction_UKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db)
+    [hat_y, S, Pxy] = UT_H(x_hat, P, meas_psi, meas_phi_dot, meas_dx, meas_db);
     
     % calcolo dell'innovazione
     y = [meas_psi, meas_phi_dot, meas_dx, meas_db]';
@@ -154,7 +159,7 @@ function [x_hat, P, e] = correction_UKF(x_hat, P, R, meas_psi, meas_phi_dot, mea
 end
 
 function [pred_meas, pred_meas_cov, cross_cov] = UT_H(prior_mean, prior_cov, ...
-    meas_psi, meas_phi_dot, meas_dx, meas_db, Jsym, old_h)
+    meas_psi, meas_phi_dot, meas_dx, meas_db)
     % Parametri dell'algoritmo SUT che descrivono quanto sono scalati i
     % sigma point simmetrici rispetto al valore centrale
     alpha = 1;            % UT non scalata (lambda = k)
@@ -191,7 +196,8 @@ function [pred_meas, pred_meas_cov, cross_cov] = UT_H(prior_mean, prior_cov, ...
     %Calcolo della funzione h sui sigma points
     for i = 1:size(sigma_points,2)
         new = [sigma_points(:,i); 0; 0; 0; 0];
-        propagated_sigmapoints(:,i) = double(subs(Jsym.h, old_h, new));
+        %propagated_sigmapoints(:,i) = double(subs(Jsym.h, old_h, new)); % calcolo con subs
+        propagated_sigmapoints(:,i) = observation_model_h_UKF(new); % calcolo con matlabFunction
     end
 
     %Media campionaria

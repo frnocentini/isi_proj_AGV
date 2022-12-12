@@ -39,35 +39,35 @@ R = diag([log_vars.std_dev_psi^2, log_vars.std_dev_phi_dot^2, ...
 % di misura e dei rispettivi jacobiani:
 Jsym = getJacobian();
 
-% % Funzione di stato f simbolica
-% f = Jsym.f;
-% matlabFunction(f,'File','state_function_f','Vars',{old_f});
-% % Modello di misura h simbolico
-% h = Jsym.h;
-% matlabFunction(h,'File','observation_model_h','Vars',{old_h});
-% % Jacobiano simbolico di f rispetto allo stato X
-% F = Jsym.F;
-% matlabFunction(F,'File','function_F','Vars',{old_f});
-% % Jacobiano simbolico di f rispetto al disturbo W
-% T = Jsym.T;
-% matlabFunction(T,'File','function_T','Vars',{old_f});
-% % Jacobiano simbolico di h rispetto allo stato X
-% H = Jsym.H;
-% matlabFunction(H,'File','function_H','Vars',{old_h});
-% % Jacobiano simbolico di h rispetto al disturbo V
-% M = Jsym.M;
-% matlabFunction(M,'File','function_M','Vars',{old_h});
+% Funzione di stato f simbolica
+f = Jsym.f;
+matlabFunction(f,'File','state_function_f_EKF','Vars',{old_f});
+% Modello di misura h simbolico
+h = Jsym.h;
+matlabFunction(h,'File','observation_model_h_EKF','Vars',{old_h});
+% Jacobiano simbolico di f rispetto allo stato X
+F = Jsym.F;
+matlabFunction(F,'File','jacobian_F','Vars',{old_f},'Optimize',false);
+% Jacobiano simbolico di f rispetto al disturbo W
+T = Jsym.T;
+matlabFunction(T,'File','jacobian_T','Vars',{old_f});
+% Jacobiano simbolico di h rispetto allo stato X
+H = Jsym.H;
+matlabFunction(H,'File','jacobian_H','Vars',{old_h});
+% Jacobiano simbolico di h rispetto al disturbo V
+M = Jsym.M;
+matlabFunction(M,'File','jacobian_M','Vars',{old_h});
 
 
 k = 1;
 for t = dt:dt:t_max
 
     %prediction step
-    [x_hat(:,k+1), P] = prediction_EKF(x_hat(:,k), P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k), Jsym, old_f);
+    [x_hat(:,k+1), P] = prediction_EKF(x_hat(:,k), P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k));
 
     %correction step
     [x_hat(:,k+1), P, e(:,k+1)] = correction_EKF(x_hat(:,k+1), P, R, meas_sens_psi(k+1), meas_sens_phi_dot(k+1), meas_sens_dx(k+1), ...
-                                        meas_sens_db(k+1), Jsym, old_h);
+                                        meas_sens_db(k+1));
 
     k = k + 1;
 end
@@ -80,28 +80,32 @@ end
 [psi_estimation] = [x_hat(5,:)]';
 [psi_dot_estimation] = [x_hat(6,:)]';
 
-log_vars.x_estimation_EKF = [x_estimation];
-log_vars.y_estimation_EKF = [y_estimation];
-log_vars.theta_estimation_EKF = [theta_estimation];
-log_vars.phi_dot_estimation_EKF = [phi_dot_estimation];
-log_vars.psi_estimation_EKF = [psi_estimation];
-log_vars.psi_dot_estimation_EKF = [psi_dot_estimation];
-log_vars.innovation = [e]
+log_vars.x_estimation_EKF = x_estimation;
+log_vars.y_estimation_EKF = y_estimation;
+log_vars.theta_estimation_EKF = theta_estimation;
+log_vars.phi_dot_estimation_EKF = phi_dot_estimation;
+log_vars.psi_estimation_EKF = psi_estimation;
+log_vars.psi_dot_estimation_EKF = psi_dot_estimation;
+log_vars.innovation = [e];
 
 save('dataset','log_vars');
 
 % Funzioni:
-function  [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi, Jsym, old_f)
+function  [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi)
     % Calcolo dei jacobiani numerici:
     new = [x_hat; tau_phi; tau_psi; 0; 0; 0; 0; 0; 0];
-    %F = function_F(new);
-    F = double(subs(Jsym.F, old_f,new));
-    %T = function_T(new);
-    T = double(subs(Jsym.T, old_f, new));
+    % Jacobiani numerici calcolati con matlabFunction
+    F = jacobian_F(new);
+    T = jacobian_T(new);
+%     % Jacobiani numerici calcolati con subs
+%     F = double(subs(Jsym.F, old_f,new));
+%     T = double(subs(Jsym.T, old_f, new));
     
     % Calcolo della funzione di stato al passo k
-    %f = state_function_f(new);
-    f = double(subs(Jsym.f, old_f, new));
+    % Funzione di stato numerica calcolata con matlabFunction
+    f = state_function_f(new);
+%     % Funzione di stato numerica calcolata con subs
+%     f = double(subs(Jsym.f, old_f, new));
     
     % stima di X al passo k+1 noto k
     x_hat = x_hat + dt*f;
@@ -111,17 +115,21 @@ function  [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi, Jsym, o
     P = F*P*F' + T*Q*T';
 end
 
-function [x_hat, P, e, h] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db, Jsym, old_h)
+function [x_hat, P, e, h] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db)
     % Calcolo dei jacobiani numerici:
     new = [x_hat; 0; 0; 0; 0];
-    %H = function_H(new);
-    H = double(subs(Jsym.H, old_h, new));
-    %M = function_M(new);
-    M = double(subs(Jsym.M, old_h, new));
+    % Jacobiani numerici calcolati con matlabFunction
+    H = jacobian_H(new);
+    M = jacobian_M(new);
+%     % Jacobiani numerici calcolati con subs
+%     H = double(subs(Jsym.H, old_h, new));
+%     M = double(subs(Jsym.M, old_h, new));
 
     % Calcolo del modello di osservazione al passo k
-    %h = observation_model_h(new);
-    h = double(subs(Jsym.h, old_h, new));
+    % Modello di misura numerico calcolato con matlabFunction
+    h = observation_model_h(new);
+%     % Modello di misura numerico calcolato con subs
+%     h = double(subs(Jsym.h, old_h, new));
 
     % Calcolo dell'innovazione
     e = [meas_psi; meas_phi_dot; meas_dx; meas_db] - h;
