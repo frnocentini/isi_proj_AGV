@@ -66,7 +66,7 @@ for t = dt:dt:t_max
     [x_hat(:,k+1), P] = prediction_EKF(x_hat(:,k), P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k), Jsym, old_f);
 
     %correction step
-    [x_hat(:,k+1), P] = correction_EKF(x_hat(:,k+1), P, R, meas_sens_psi(k+1), meas_sens_phi_dot(k+1), meas_sens_dx(k+1), ...
+    [x_hat(:,k+1), P, e(:,k+1)] = correction_EKF(x_hat(:,k+1), P, R, meas_sens_psi(k+1), meas_sens_phi_dot(k+1), meas_sens_dx(k+1), ...
                                         meas_sens_db(k+1), Jsym, old_h);
 
     k = k + 1;
@@ -86,6 +86,7 @@ log_vars.theta_estimation_EKF = [theta_estimation];
 log_vars.phi_dot_estimation_EKF = [phi_dot_estimation];
 log_vars.psi_estimation_EKF = [psi_estimation];
 log_vars.psi_dot_estimation_EKF = [psi_dot_estimation];
+log_vars.innovation = [e]
 
 save('dataset','log_vars');
 
@@ -110,7 +111,7 @@ function  [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi, Jsym, o
     P = F*P*F' + T*Q*T';
 end
 
-function [x_hat, P, e,h] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db, Jsym, old_h)
+function [x_hat, P, e, h] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db, Jsym, old_h)
     % Calcolo dei jacobiani numerici:
     new = [x_hat; 0; 0; 0; 0];
     %H = function_H(new);
@@ -125,6 +126,7 @@ function [x_hat, P, e,h] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, m
     % Calcolo dell'innovazione
     e = [meas_psi; meas_phi_dot; meas_dx; meas_db] - h;
     e(1) = wrapToPi(e(1,1))
+    
     % Calcolo della covarianza associata all'innovazione
     S = H*P*H' + M*R*M';
     % Calcolo del guadagno di correzione
