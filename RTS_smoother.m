@@ -32,19 +32,26 @@ hold on
 grid on
 box on
 axis equal
-xlim([-50 150])
-ylim([-50 150])
+xlim([-50 50])
+ylim([-50 50])
 xlabel('x [m]')
 ylabel('y [m]')
 
 ground_truth = plot(log_vars.x_real', log_vars.y_real', 'g--', 'LineWidth', 1.2);
-x_hat_plot = log_EKF(.x_hat_corr;
-estimated_plot = plot(log_EKF.x_hat_corr, log_EKF.x_hat_correction(:,2),'r', 'LineWidth', 1.2);
-smoothed_plot = plot(log_EKF.x_hat_smoothed(:,1), log_EKF.x_hat_smoothed(:,2),'b', 'LineWidth', 1.2);
-
-
-ground_init_truth = plot(log_vars.s_Tx(1), log_vars.s_Ty(1), 'go', 'MarkerFaceColor', 'g');
-estimated_init_plot = plot(log_EKF.x_hat_correction(1,1), log_EKF.x_hat_correction(1,2),'ro', 'MarkerFaceColor', 'r');
-smoothed_init_plot = plot(log_EKF.x_hat_smoothed(1,1), log_EKF.x_hat_smoothed(1,2),'bo', 'MarkerFaceColor', 'b');
-
+for k = 1:1:size(log_EKF,2)
+    x_hat_corr_x(k)= log_EKF(:,k).x_hat_corr(1);
+    x_hat_corr_y(k)= log_EKF(:,k).x_hat_corr(2);
+    x_hat_smooth_x(k)= log_EKF(:,k).x_hat_smoothed(1);
+    x_hat_smooth_y(k)= log_EKF(:,k).x_hat_smoothed(2);
+%     x_hat_corr_tot_in = x_hat_corr_tot;
+%     x_hat_smooth_tot = [log_EKF(:,k).x_hat_smoothed];
+end
+estimated_plot = plot(x_hat_corr_x, x_hat_corr_y,'r', 'LineWidth', 1.2);
+smoothed_plot = plot(x_hat_smooth_x, x_hat_smooth_y,'b', 'LineWidth', 1.2);
+% 
+% 
+% ground_init_truth = plot(log_vars.s_Tx(1), log_vars.s_Ty(1), 'go', 'MarkerFaceColor', 'g');
+% estimated_init_plot = plot(log_EKF.x_hat_correction(1,1), log_EKF.x_hat_correction(1,2),'ro', 'MarkerFaceColor', 'r');
+% smoothed_init_plot = plot(log_EKF.x_hat_smoothed(1,1), log_EKF.x_hat_smoothed(1,2),'bo', 'MarkerFaceColor', 'b');
+% 
 legend('GT','EKF','RTS')
