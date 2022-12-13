@@ -103,7 +103,7 @@ function  [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi)
     
     % Calcolo della funzione di stato al passo k
     % Funzione di stato numerica calcolata con matlabFunction
-    f = state_function_f(new);
+    f = state_function_f_EKF(new);
 %     % Funzione di stato numerica calcolata con subs
 %     f = double(subs(Jsym.f, old_f, new));
     
@@ -127,7 +127,7 @@ function [x_hat, P, e, h] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, 
 
     % Calcolo del modello di osservazione al passo k
     % Modello di misura numerico calcolato con matlabFunction
-    h = observation_model_h(new);
+    h = observation_model_h_EKF(new);
 %     % Modello di misura numerico calcolato con subs
 %     h = double(subs(Jsym.h, old_h, new));
 
