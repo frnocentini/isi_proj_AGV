@@ -207,6 +207,7 @@ title(t2,'Innovazione EKF'); xlabel(t2,'Time (sec)');
 %% Plot della traiettoria risultante dallo stimatore EKF
 close all
 figure(1)
+axis equal
 hold on
 plot(x_estimation_EKF', y_estimation_EKF')
 plot(x_real', y_real', '--');
@@ -218,7 +219,7 @@ coord_BCx = [d,d];
 coord_BCy = [d+0.1,-d-0.1];
 coord_DEx = [-L-0.5,-L-0.5];
 coord_DEy = [-d-0.1,+d+0.1];
-
+scale_factor = 5;
 xlim([min(x_estimation_EKF-10) max(x_estimation_EKF+10)])
 ylim([min(y_estimation_EKF-10) max(y_estimation_EKF+10)])
 
@@ -229,11 +230,11 @@ for k = 1 : size(x_estimation_EKF, 1)
     y = y_estimation_EKF(k,:);
     psi = psi_estimation_EKF(k,:);
     R_zt = [cos(th) , -sin(th); sin(th), cos(th)];
-    BE_R = R_zt*[coord_BEx; coord_BEy];
-    BC_R = R_zt*[coord_BCx; coord_BCy];
-    CD_R = R_zt*[coord_CDx; coord_CDy];
-    DE_R = R_zt*[coord_DEx; coord_DEy];
-    wp = R_zt*[-L+rp*2*cos(psi), -L-rp*2*cos(psi);rp*2*sin(psi), -rp*2*sin(psi)];
+    BE_R = scale_factor*R_zt*[coord_BEx; coord_BEy];
+    BC_R = scale_factor*R_zt*[coord_BCx; coord_BCy];
+    CD_R = scale_factor*R_zt*[coord_CDx; coord_CDy];
+    DE_R = scale_factor*R_zt*[coord_DEx; coord_DEy];
+    wp = scale_factor*R_zt*[-L+rp*cos(psi), -L-rp*cos(psi);rp*sin(psi), -rp*sin(psi)];
     BE = plot(x+BE_R(1,:),y+BE_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     BC = plot(x+BC_R(1,:),y+BC_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     CD= plot(x+CD_R(1,:),y+CD_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
@@ -257,14 +258,14 @@ hold on
 axis equal
 plot(x_estimation_UKF', y_estimation_UKF')
 plot(x_real', y_real', '--');
-coord_BEx = [d,-L-0.5];
-coord_BEy = [d+0.1,d+0.1];
-coord_CDx = [d,-L-0.5];
-coord_CDy = [-d-0.1,-d-0.1];
-coord_BCx = [d,d];
-coord_BCy = [d+0.1,-d-0.1];
-coord_DEx = [-L-0.5,-L-0.5];
-coord_DEy = [-d-0.1,+d+0.1];
+coord_BEx = 2*[d,-L-0.5];
+coord_BEy = 2*[d+0.1,d+0.1];
+coord_CDx = 2*[d,-L-0.5];
+coord_CDy = 2*[-d-0.1,-d-0.1];
+coord_BCx = 2*[d,d];
+coord_BCy = 2*[d+0.1,-d-0.1];
+coord_DEx = 2*[-L-0.5,-L-0.5];
+coord_DEy = 2*[-d-0.1,+d+0.1];
 
 xlim([min(x_estimation_UKF-10) max(x_estimation_UKF+10)])
 ylim([min(y_estimation_UKF-10) max(y_estimation_UKF+10)])
@@ -280,7 +281,7 @@ for k = 1 : size(x_estimation_UKF, 1)
     BC_R = R_zt*[coord_BCx; coord_BCy];
     CD_R = R_zt*[coord_CDx; coord_CDy];
     DE_R = R_zt*[coord_DEx; coord_DEy];
-    wp = R_zt*[-L+rp*2*cos(psi), -L-rp*2*cos(psi);rp*2*sin(psi), -rp*2*sin(psi)];
+    wp = 2*R_zt*[-L+rp*cos(psi), -L-rp*cos(psi);rp*sin(psi), -rp*sin(psi)];
     BE = plot(x+BE_R(1,:),y+BE_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     BC = plot(x+BC_R(1,:),y+BC_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     CD= plot(x+CD_R(1,:),y+CD_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');

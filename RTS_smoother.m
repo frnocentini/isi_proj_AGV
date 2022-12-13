@@ -32,13 +32,14 @@ hold on
 grid on
 box on
 axis equal
-xlim([-50 50])
-ylim([-50 50])
+
+
 xlabel('x [m]')
 ylabel('y [m]')
 
 ground_truth = plot(log_vars.x_real', log_vars.y_real', 'g--', 'LineWidth', 1.2);
 for k = 1:1:size(log_EKF,2)
+         
     x_hat_corr_x(k)= log_EKF(:,k).x_hat_corr(1);
     x_hat_corr_y(k)= log_EKF(:,k).x_hat_corr(2);
     x_hat_smooth_x(k)= log_EKF(:,k).x_hat_smoothed(1);
@@ -46,6 +47,11 @@ for k = 1:1:size(log_EKF,2)
 %     x_hat_corr_tot_in = x_hat_corr_tot;
 %     x_hat_smooth_tot = [log_EKF(:,k).x_hat_smoothed];
 end
+
+
+xlim([min(x_hat_smooth_x) max(x_hat_smooth_x)])
+ylim([min(x_hat_smooth_y) max(x_hat_smooth_y)])
+
 estimated_plot = plot(x_hat_corr_x, x_hat_corr_y,'r', 'LineWidth', 1.2);
 smoothed_plot = plot(x_hat_smooth_x, x_hat_smooth_y,'b', 'LineWidth', 1.2);
 % 
