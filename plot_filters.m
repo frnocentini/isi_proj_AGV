@@ -53,7 +53,7 @@ nexttile;
 % Plot phi_dot
 plot(phi_dot_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 plot(phi_dot_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
-xlim([0,400]); ylabel('phi_dot');
+xlim([0,400]); ylabel('phi\_dot');
 legend({'phi\_dot reale','phi\_dot stimata'},'orientation','horizontal','location','southoutside');
 title(t2,'EKF results'); xlabel(t2,'Time (sec)');
 
@@ -174,7 +174,7 @@ title(t3,'UKF results'); xlabel(t3,'Time (sec)');
 %plot innovazione lungo tutte le componenti
 
 figure(4);
-t1 = tiledlayout(2,1);
+t4 = tiledlayout(2,1);
 nexttile; 
 % Plot x
 plot(innovation_UKF(1,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]');hold on;
@@ -186,26 +186,27 @@ nexttile;
 plot(innovation_UKF(2,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on;
 xlim([0,400]);
 legend('Innovazione per phi\_dot','orientation','horizontal','location','southoutside');
-title(t1,'Innovazione EKF'); xlabel(t1,'Time (sec)');
+title(t4,'Innovazione EKF'); xlabel(t4,'Time (sec)');
 
 
 figure(5);
-t2 = tiledlayout(2,1);
+t5 = tiledlayout(2,1);
 nexttile; 
 % Plot theta
 plot(innovation_UKF(3,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 xlim([0,400]); 
-legend({'Innovazione per dx'},'orientation','horizontal','location','southoutside');
+legend('Innovazione per dx','orientation','horizontal','location','southoutside');
 
 nexttile; 
 % Plot phi_dot
 plot(innovation_UKF(4,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 xlim([0,400]); 
 legend('Innovazione per db','southoutside');
-title(t2,'Innovazione EKF'); xlabel(t2,'Time (sec)');
+title(t5,'Innovazione UKF'); xlabel(t5,'Time (sec)');
 
 %% Plot della traiettoria risultante dallo stimatore EKF
 close all
+clc
 figure(1)
 axis equal
 hold on
@@ -219,6 +220,10 @@ coord_BCx = [d,d];
 coord_BCy = [d+0.1,-d-0.1];
 coord_DEx = [-L-0.5,-L-0.5];
 coord_DEy = [-d-0.1,+d+0.1];
+coord_way_1 = [d,d];
+coord_wax_2 = [rp, -rp];
+coord_way_2 = [-d,-d];
+
 scale_factor = 5;
 xlim([min(x_estimation_EKF-10) max(x_estimation_EKF+10)])
 ylim([min(y_estimation_EKF-10) max(y_estimation_EKF+10)])
@@ -235,11 +240,17 @@ for k = 1 : size(x_estimation_EKF, 1)
     CD_R = scale_factor*R_zt*[coord_CDx; coord_CDy];
     DE_R = scale_factor*R_zt*[coord_DEx; coord_DEy];
     wp = scale_factor*R_zt*[-L+rp*cos(psi), -L-rp*cos(psi);rp*sin(psi), -rp*sin(psi)];
+    wa1 = scale_factor*R_zt*[coord_wax_1; coord_way_1];
+    wa2 = scale_factor*R_zt*[coord_wax_2; coord_way_2];
+        
     BE = plot(x+BE_R(1,:),y+BE_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     BC = plot(x+BC_R(1,:),y+BC_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     CD= plot(x+CD_R(1,:),y+CD_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     DE = plot(x+DE_R(1,:),y+DE_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');   
     w_p = plot(x+wp(1,:),y+wp(2,:),'LineWidth', 2, color = 'r');
+    w_a1 = plot(x+wa1(1,:),y+wa1(2,:),'LineWidth', 2, color = 'r');
+    w_a2 = plot(x+wa2(1,:),y+wa2(2,:),'LineWidth', 2, color = 'r');
+
     title('AGV plot')
     legend('stimata', 'groundtruth')
     pause(dt)
@@ -248,7 +259,11 @@ for k = 1 : size(x_estimation_EKF, 1)
     delete(CD)
     delete(DE)
     delete(w_p)
+    delete(w_a1)
+    delete(w_a2)
 end
+
+hold off
 
 
 %% Plot della traiettoria risultante dallo stimatore UKF
@@ -258,14 +273,20 @@ hold on
 axis equal
 plot(x_estimation_UKF', y_estimation_UKF')
 plot(x_real', y_real', '--');
-coord_BEx = 2*[d,-L-0.5];
-coord_BEy = 2*[d+0.1,d+0.1];
-coord_CDx = 2*[d,-L-0.5];
-coord_CDy = 2*[-d-0.1,-d-0.1];
-coord_BCx = 2*[d,d];
-coord_BCy = 2*[d+0.1,-d-0.1];
-coord_DEx = 2*[-L-0.5,-L-0.5];
-coord_DEy = 2*[-d-0.1,+d+0.1];
+coord_BEx = [d,-L-0.5];
+coord_BEy = [d+0.1,d+0.1];
+coord_CDx = [d,-L-0.5];
+coord_CDy = [-d-0.1,-d-0.1];
+coord_BCx = [d,d];
+coord_BCy = [d+0.1,-d-0.1];
+coord_DEx = [-L-0.5,-L-0.5];
+coord_DEy = [-d-0.1,+d+0.1];
+coord_wax_1 = [-rp,rp];
+coord_way_1 = [d,d];
+coord_wax_2 = [rp, -rp];
+coord_way_2 = [-d,-d];
+
+scale_factor = 5;
 
 xlim([min(x_estimation_UKF-10) max(x_estimation_UKF+10)])
 ylim([min(y_estimation_UKF-10) max(y_estimation_UKF+10)])
@@ -277,16 +298,22 @@ for k = 1 : size(x_estimation_UKF, 1)
     y = y_estimation_UKF(k,:);
     psi = psi_estimation_UKF(k,:);
     R_zt = [cos(th) , -sin(th); sin(th), cos(th)];
-    BE_R = R_zt*[coord_BEx; coord_BEy];
-    BC_R = R_zt*[coord_BCx; coord_BCy];
-    CD_R = R_zt*[coord_CDx; coord_CDy];
-    DE_R = R_zt*[coord_DEx; coord_DEy];
-    wp = 2*R_zt*[-L+rp*cos(psi), -L-rp*cos(psi);rp*sin(psi), -rp*sin(psi)];
+    BE_R = scale_factor*R_zt*[coord_BEx; coord_BEy];
+    BC_R = scale_factor*R_zt*[coord_BCx; coord_BCy];
+    CD_R = scale_factor*R_zt*[coord_CDx; coord_CDy];
+    DE_R = scale_factor*R_zt*[coord_DEx; coord_DEy];
+    wp = scale_factor*R_zt*[-L+rp*cos(psi), -L-rp*cos(psi);rp*sin(psi), -rp*sin(psi)];
+    wa1 = scale_factor*R_zt*[coord_wax_1; coord_way_1];
+    wa2 = scale_factor*R_zt*[coord_wax_2; coord_way_2];
+        
     BE = plot(x+BE_R(1,:),y+BE_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     BC = plot(x+BC_R(1,:),y+BC_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     CD= plot(x+CD_R(1,:),y+CD_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     DE = plot(x+DE_R(1,:),y+DE_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');   
     w_p = plot(x+wp(1,:),y+wp(2,:),'LineWidth', 2, color = 'r');
+    w_a1 = plot(x+wa1(1,:),y+wa1(2,:),'LineWidth', 2, color = 'r');
+    w_a2 = plot(x+wa2(1,:),y+wa2(2,:),'LineWidth', 2, color = 'r');
+    
     title('AGV plot')
     legend('stimata', 'groundtruth')
     pause(dt)
@@ -295,4 +322,6 @@ for k = 1 : size(x_estimation_UKF, 1)
     delete(CD)
     delete(DE)
     delete(w_p)
+    delete(w_a1)
+    delete(w_a2)
 end
