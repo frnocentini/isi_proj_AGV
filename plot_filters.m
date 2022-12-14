@@ -1,4 +1,5 @@
 %% Caricamento del dataset
+clc
 global rp l L IPy D IPz Mv mp ma IAy ra d IGz IAz a b
 
 load('dataset')
@@ -8,8 +9,8 @@ theta_real = log_vars.theta_real;
 phi_dot_real = log_vars.phi_dot_real;
 psi_real = log_vars.psi_real;
 psi_dot_real = log_vars.psi_dot_real;
-innovation_EKF = log_vars.innovation;
-%innovation_UKF = log_vars.innovation_UKF;
+%innovation_EKF = log_vars.innovation;
+innovation_UKF = log_vars.innovation_UKF;
 
 dt = log_vars.dt;
 %% Plot EKF
@@ -220,6 +221,7 @@ coord_BCx = [d,d];
 coord_BCy = [d+0.1,-d-0.1];
 coord_DEx = [-L-0.5,-L-0.5];
 coord_DEy = [-d-0.1,+d+0.1];
+coord_wax_1 = [-rp,rp];
 coord_way_1 = [d,d];
 coord_wax_2 = [rp, -rp];
 coord_way_2 = [-d,-d];

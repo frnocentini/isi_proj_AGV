@@ -115,7 +115,7 @@ function  [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi)
     P = F*P*F' + T*Q*T';
 end
 
-function [x_hat, P, e, h] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db)
+function [x_hat, P, e] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db)
     % Calcolo dei jacobiani numerici:
     new = [x_hat; 0; 0; 0; 0];
     % Jacobiani numerici calcolati con matlabFunction
