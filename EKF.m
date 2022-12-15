@@ -32,8 +32,7 @@ x_hat = log_vars.X_hat;     % stima iniziale
 P = log_vars.P;             % matrice di covarianza associata
 
 Q = diag([log_vars.std_dev_tau_phi^2, log_vars.std_dev_tau_psi^2]); %matrice di disturbo di processo
-R = diag([log_vars.std_dev_psi^2, log_vars.std_dev_phi_dot^2, ...
-          log_vars.std_dev_dx^2, log_vars.std_dev_db^2]); %matrice di errore di misura
+
 
 % Funzioni simboliche per il calcolo della funzione di stato, del modello
 % di misura e dei rispettivi jacobiani:
@@ -59,15 +58,27 @@ M = Jsym.M;
 matlabFunction(M,'File','jacobian_M','Vars',{old_h});
 
 
+selection_vector = [false false false false]';  % serve per selezionare quali componenti di h rimuovere
+flag = [0 0 0 0]';  % tiene traccia dell'indice delle misure più recenti già utilizzate per ogni
+                    % sensore
+actual_meas = [0 0 0 0]';
+
+
 k = 1;
 for t = dt:dt:t_max
 
     %prediction step
     [x_hat(:,k+1), P] = prediction_EKF(x_hat(:,k), P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k));
+    
+    %restituisce ad ogni passo il vettore con le misure dei sensori
+    %effettive e disponibili che non erano già state prese
+    [actual_meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, meas_sens_dx, meas_sens_db, flag, t, selection_vector);
+    
+    R = diag([log_vars.std_dev_psi^2, log_vars.std_dev_phi_dot^2, ...
+          log_vars.std_dev_dx^2, log_vars.std_dev_db^2]); %matrice di errore di misura
 
     %correction step
-    [x_hat(:,k+1), P, e(:,k+1)] = correction_EKF(x_hat(:,k+1), P, R, meas_sens_psi(k+1), meas_sens_phi_dot(k+1), meas_sens_dx(k+1), ...
-                                        meas_sens_db(k+1));
+    [x_hat(:,k+1), P, innovation(:,k)] = correction_EKF(x_hat(:,k+1), P, R, actual_meas, selection_vector);
 
     k = k + 1;
 end
@@ -86,7 +97,7 @@ log_vars.theta_estimation_EKF = theta_estimation;
 log_vars.phi_dot_estimation_EKF = phi_dot_estimation;
 log_vars.psi_estimation_EKF = psi_estimation;
 log_vars.psi_dot_estimation_EKF = psi_dot_estimation;
-log_vars.innovation = [e];
+log_vars.innovation = innovation;
 
 save('dataset','log_vars');
 
@@ -115,7 +126,7 @@ function  [x_hat, P] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi)
     P = F*P*F' + T*Q*T';
 end
 
-function [x_hat, P, e] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db)
+function [x_hat, P, innovation] = correction_EKF(x_hat, P, R, actual_meas, selection_vector)
     % Calcolo dei jacobiani numerici:
     new = [x_hat; 0; 0; 0; 0];
     % Jacobiani numerici calcolati con matlabFunction
@@ -131,19 +142,156 @@ function [x_hat, P, e] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, mea
 %     % Modello di misura numerico calcolato con subs
 %     h = double(subs(Jsym.h, old_h, new));
 
+    innovation = [0 0 0 0]';
+    counter = 0;
     % Calcolo dell'innovazione
-    e = [meas_psi; meas_phi_dot; meas_dx; meas_db] - h;
-    e(1) = wrapToPi(e(1,1))
+    if selection_vector(1) == false
+        h(1) = [];
+        H(1,:) = [];
+        M(1,:) = [];
+        M(:,1) = [];
+        R(1,:) = [];
+        R(:,1) = [];
+        innovation(1) = 100;
+        counter = counter + 1;
+    end
+
+    if selection_vector(2) == false 
+        h(2-counter) = [];
+        H(2-counter,:) = [];
+        M(2-counter,:) = [];
+        M(:,2-counter) = [];
+        R(2-counter,:) = [];
+        R(:,2-counter) = [];
+        innovation(2) = 100;
+        counter = counter + 1;
+    end
+    
+    if selection_vector(3) == false
+        h(3-counter) = [];
+        H(3-counter,:) = [];
+        M(3-counter,:) = [];
+        M(:,3-counter) = [];
+        R(3-counter,:) = [];
+        R(:,3-counter) = [];
+        innovation(3) = 100;
+        counter = counter + 1;
+    end
+    
+    if selection_vector(4) == false
+        h(4-counter) = [];
+        H(4-counter,:) = [];
+        M(4-counter,:) = [];
+        M(:,4-counter) = [];
+        R(4-counter,:) = [];
+        R(:,4-counter) = [];
+        innovation(4) = 100;
+    end
+    
+    e = actual_meas' - h;
+    
+    counter = 0;
+    if selection_vector(1) == true
+        e(1) = wrapToPi(e(1,1))
+        counter = counter + 1;
+        innovation(1) = e(counter);
+    end
+
+    if selection_vector(2) == true
+        counter = counter + 1;
+        innovation(2) = e(counter);
+    end
+
+    if selection_vector(3) == true
+        counter = counter + 1;
+        innovation(3) = e(counter);
+    end
+
+    if selection_vector(4) == true
+        counter = counter + 1;
+        innovation(4) = e(counter);
+    end
+
     
     % Calcolo della covarianza associata all'innovazione
     S = H*P*H' + M*R*M';
     % Calcolo del guadagno di correzione
     L = P*H'*inv(S);
-
+    
     % Stima statica BLUE
-    x_hat = x_hat + L*e;
-    x_hat(3) = wrapTo2Pi(x_hat(3));
-    x_hat(5) = wrapToPi(x_hat(5));
-    % Calcolo della P con la forma di Joseph
-    P = (eye(6) - L*H)*P*(eye(6) - L*H)' + L*M*R*M'*L';
+    if(isempty(e) == true)
+        x_hat = x_hat;
+        P = P;
+    else
+        x_hat = x_hat + L*e;
+        x_hat(3) = wrapTo2Pi(x_hat(3));
+        x_hat(5) = wrapToPi(x_hat(5));
+        % Calcolo della P con la forma di Joseph
+        P = (eye(6) - L*H)*P*(eye(6) - L*H)' + L*M*R*M'*L';
+    end
+end
+
+function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, meas_sens_dx, meas_sens_db, flag, t, selection_vector)
+    meas = [];
+    %count mi tiene traccia se sono entrato nei while 
+    count = 0;
+    while(((flag(1)+1) < size(meas_sens_psi.data,1)) && (meas_sens_psi.time(flag(1)+1) <= t))
+        count = count + 1;
+        flag(1) = flag(1) + 1;
+    end
+    
+    count_size_meas = 0;
+
+    if(count == 0)
+        selection_vector(1) = false;
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(1) = true;
+        meas(count_size_meas) = meas_sens_psi.data(flag(1));
+    end
+    
+    count = 0;
+    while(((flag(2)+1) < size(meas_sens_phi_dot.data,1)) && (meas_sens_phi_dot.time(flag(2)+1) <= t))
+        count = count + 1;
+        flag(2) = flag(2) + 1;
+    end
+
+    if(count == 0)
+        selection_vector(2) = false;
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(2) = true;
+        meas(count_size_meas) = meas_sens_phi_dot.data(flag(2));
+    end
+    
+    count = 0;
+    while(((flag(3)+1) < size(meas_sens_dx.data,1)) && (meas_sens_dx.time(flag(3)+1) <= t))
+        count = count + 1;
+        flag(3) = flag(3) + 1;
+    end
+
+    if(count == 0)
+        selection_vector(3) = false;
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(3) = true;
+        meas(count_size_meas) = meas_sens_dx.data(flag(3));
+    end
+    
+
+    count = 0;
+    while(((flag(4)+1) < size(meas_sens_db.data,1)) && (meas_sens_db.time(flag(4)+1) <= t))
+        count = count + 1;
+        flag(4) = flag(4) + 1;
+    end
+
+
+    if(count == 0)
+        selection_vector(4) = false;
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(4) = true;
+        meas(count_size_meas) = meas_sens_db.data(flag(4,1));
+    end
+
 end

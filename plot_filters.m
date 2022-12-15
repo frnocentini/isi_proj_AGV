@@ -9,8 +9,10 @@ theta_real = log_vars.theta_real;
 phi_dot_real = log_vars.phi_dot_real;
 psi_real = log_vars.psi_real;
 psi_dot_real = log_vars.psi_dot_real;
-%innovation_EKF = log_vars.innovation;
-innovation_UKF = log_vars.innovation_UKF;
+t_max = log_vars.t_max;
+dt = log_vars.dt;
+innovation_EKF = log_vars.innovation;
+%innovation_UKF = log_vars.innovation_UKF;
 
 dt = log_vars.dt;
 %% Plot EKF
@@ -81,15 +83,33 @@ title(t3,'EKF results'); xlabel(t3,'Time (sec)');
 figure(4);
 t1 = tiledlayout(2,1);
 nexttile; 
-% Plot x
-plot(innovation_EKF(1,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]');hold on;
-xlim([0,400]); 
+% Plot innovazione per psi
+t = 0;
+for i = 1 : size(innovation_EKF,2)
+    t = t + dt;
+    if innovation_EKF(1,i) == 100
+        plot(t,innovation_EKF(1,i),' ');hold on;
+    else
+        plot(t,innovation_EKF(1,i),'o','LineWidth',1, color = '[0.3010 0.7450 0.9330]');hold on;
+    end
+end
+%plot(innovation_EKF(1,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]');hold on;
+xlim([0,t_max]); 
 legend('Innovazione per psi','orientation','horizontal','location','southoutside');
 
 nexttile; 
-% Plot y
-plot(innovation_EKF(2,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on;
-xlim([0,400]);
+% Plot innovazione per phi\_dot
+t = 0;
+for i = 1 : size(innovation_EKF,2)
+    t = t + dt;
+    if innovation_EKF(2,i) == 100
+        plot(t,innovation_EKF(2,i),' ');hold on;
+    else
+        plot(t,innovation_EKF(2,i),'o','LineWidth',1, color = '[0.3010 0.7450 0.9330]');hold on;
+    end
+end
+xlim([0,t_max]); 
+%plot(innovation_EKF(2,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on;
 legend('Innovazione per phi\_dot','orientation','horizontal','location','southoutside');
 title(t1,'Innovazione EKF'); xlabel(t1,'Time (sec)');
 
@@ -97,16 +117,34 @@ title(t1,'Innovazione EKF'); xlabel(t1,'Time (sec)');
 figure(5);
 t2 = tiledlayout(2,1);
 nexttile; 
-% Plot theta
-plot(innovation_EKF(3,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
-xlim([0,400]); 
+% Plot Innovazione per dx
+t = 0;
+for i = 1 : size(innovation_EKF,2)
+    t = t + dt;
+    if innovation_EKF(3,i) == 100
+        plot(t,innovation_EKF(3,i),' ');hold on;
+    else
+        plot(t,innovation_EKF(3,i),'o','LineWidth',1, color = '[0.3010 0.7450 0.9330]');hold on;
+    end
+end
+xlim([0,t_max]); ylim([-1,1]);
+%plot(innovation_EKF(3,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 legend({'Innovazione per dx'},'orientation','horizontal','location','southoutside');
 
 nexttile; 
-% Plot phi_dot
-plot(innovation_EKF(4,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
-xlim([0,400]); 
-legend('Innovazione per db','southoutside');
+% Plot innovazione per db
+t = 0;
+for i = 1 : size(innovation_EKF,2)
+    t = t + dt;
+    if innovation_EKF(4,i) == 100
+        plot(t,innovation_EKF(4,i),' ');hold on;
+    else
+        plot(t,innovation_EKF(4,i),'o','LineWidth',1, color = '[0.3010 0.7450 0.9330]');hold on;
+    end
+end
+xlim([0,t_max]); ylim([-1,1]);
+%plot(innovation_EKF(4,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
+legend('Innovazione per db','orientation','horizontal','location','southoutside');
 title(t2,'Innovazione EKF'); xlabel(t2,'Time (sec)');
 
 %% Plot UKF
