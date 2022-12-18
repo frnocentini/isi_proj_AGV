@@ -59,23 +59,20 @@ matlabFunction(M,'File','jacobian_M','Vars',{old_h});
 
 
 selection_vector = [false false false false]';  % serve per selezionare quali componenti di h rimuovere
-flag = [1 1 1 1]';  % tiene traccia dell'indice delle misure più recenti già utilizzate per ogni
+flag = [0 0 0 0]';  % tiene traccia dell'indice delle misure più recenti già utilizzate per ogni
                     % sensore
 actual_meas = [0 0 0 0]';
 
-
+in = 0;
 k = 1;
-for t = dt:dt:t_max
-
+for t = 0:dt:t_max
     %prediction step
     [x_hat(:,k+1), P] = prediction_EKF(x_hat(:,k), P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k));
     
     %restituisce ad ogni passo il vettore con le misure dei sensori
     %effettive e disponibili che non erano già state prese
-    [actual_meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, meas_sens_dx, meas_sens_db, flag, t, selection_vector);
-    
-    flag
-    selection_vector
+    [actual_meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, meas_sens_dx, meas_sens_db, flag, t, selection_vector,in,dt);
+    in = in + 1;
 
 
     R = diag([log_vars.std_dev_psi^2, log_vars.std_dev_phi_dot^2, ...
@@ -196,7 +193,7 @@ function [x_hat, P, innovation] = correction_EKF(x_hat, P, R, actual_meas, selec
     
     counter = 0;
     if selection_vector(1) == true
-        e(1) = wrapToPi(e(1,1))
+        e(1) = wrapToPi(e(1,1));
         counter = counter + 1;
         innovation(1) = e(counter);
     end
@@ -235,11 +232,11 @@ function [x_hat, P, innovation] = correction_EKF(x_hat, P, R, actual_meas, selec
     end
 end
 
-function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, meas_sens_dx, meas_sens_db, flag, t, selection_vector)
+function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, meas_sens_dx, meas_sens_db, flag, t, selection_vector,in,dt)
     meas = [];
     %count mi tiene traccia se sono entrato nei while 
     count = 0;
-    while(((flag(1)+1) < size(meas_sens_psi.data,1)) && (meas_sens_psi.time(flag(1)+1) <= t+eps))
+    while(((flag(1)) < size(meas_sens_psi.data,1)) && (meas_sens_psi.time(flag(1)+1) <= dt*in))
         count = count + 1;
         flag(1) = flag(1) + 1;
     end
@@ -255,7 +252,7 @@ function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens
     end
     
     count = 0;
-    while(((flag(2)+1) < size(meas_sens_phi_dot.data,1)) && (meas_sens_phi_dot.time(flag(2)+1) <= t))
+    while(((flag(2)) < size(meas_sens_phi_dot.data,1)) && (meas_sens_phi_dot.time(flag(2)+1) <= t))
         count = count + 1;
         flag(2) = flag(2) + 1;
     end
@@ -269,7 +266,7 @@ function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens
     end
     
     count = 0;
-    while(((flag(3)+1) < size(meas_sens_dx.data,1)) && (meas_sens_dx.time(flag(3)+1) <= t))
+    while(((flag(3)) < size(meas_sens_dx.data,1)) && (meas_sens_dx.time(flag(3)+1) <= t))
         count = count + 1;
         flag(3) = flag(3) + 1;
     end
@@ -284,7 +281,7 @@ function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens
     
 
     count = 0;
-    while(((flag(4)+1) < size(meas_sens_db.data,1)) && (meas_sens_db.time(flag(4)+1) <= t))
+    while(((flag(4)) < size(meas_sens_db.data,1)) && (meas_sens_db.time(flag(4)+1) <= t))
         count = count + 1;
         flag(4) = flag(4) + 1;
     end
