@@ -1,5 +1,5 @@
 clc
-
+%format short
 global rp l L IPy D IPz Mv mp ma IAy ra d IGz IAz a b
 
 % Variabili simboliche:
@@ -59,7 +59,7 @@ matlabFunction(M,'File','jacobian_M','Vars',{old_h});
 
 
 selection_vector = [false false false false]';  % serve per selezionare quali componenti di h rimuovere
-flag = [0 0 0 0]';  % tiene traccia dell'indice delle misure più recenti già utilizzate per ogni
+flag = [1 1 1 1]';  % tiene traccia dell'indice delle misure più recenti già utilizzate per ogni
                     % sensore
 actual_meas = [0 0 0 0]';
 
@@ -74,6 +74,10 @@ for t = dt:dt:t_max
     %effettive e disponibili che non erano già state prese
     [actual_meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, meas_sens_dx, meas_sens_db, flag, t, selection_vector);
     
+    flag
+    selection_vector
+
+
     R = diag([log_vars.std_dev_psi^2, log_vars.std_dev_phi_dot^2, ...
           log_vars.std_dev_dx^2, log_vars.std_dev_db^2]); %matrice di errore di misura
 
@@ -235,7 +239,7 @@ function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens
     meas = [];
     %count mi tiene traccia se sono entrato nei while 
     count = 0;
-    while(((flag(1)+1) < size(meas_sens_psi.data,1)) && (meas_sens_psi.time(flag(1)+1) <= t))
+    while(((flag(1)+1) < size(meas_sens_psi.data,1)) && (meas_sens_psi.time(flag(1)+1) <= t+eps))
         count = count + 1;
         flag(1) = flag(1) + 1;
     end
