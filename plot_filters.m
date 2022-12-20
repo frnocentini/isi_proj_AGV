@@ -11,8 +11,8 @@ psi_real = log_vars.psi_real;
 psi_dot_real = log_vars.psi_dot_real;
 t_max = log_vars.t_max;
 dt = log_vars.dt;
-%innovation_EKF = log_vars.innovation_EKF;
-innovation_UKF = log_vars.innovation_UKF;
+innovation_EKF = log_vars.innovation_EKF;
+%innovation_UKF = log_vars.innovation_UKF;
 dt = log_vars.dt;
 
 %% Plot EKF
@@ -31,14 +31,14 @@ nexttile;
 % Plot x
 plot(x_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 plot(x_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
-xlim([0,400]); ylabel('x');
+xlim([0,t_max/dt]); ylabel('x');
 legend({'x real','x stimata'},'orientation','horizontal','location','southoutside');
 
 nexttile; 
 % Plot y
 plot(y_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 plot(y_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
-xlim([0,400]); ylabel('y');
+xlim([0,t_max/dt]); ylabel('y');
 legend({'y reale','y stimata'},'orientation','horizontal','location','southoutside');
 title(t1,'EKF results'); xlabel(t1,'Time (sec)');
 
@@ -49,14 +49,14 @@ nexttile;
 % Plot theta
 plot(theta_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 plot(theta_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
-xlim([0,400]); ylabel('theta');
+xlim([0,t_max/dt]); ylabel('theta');
 legend({'theta reale','theta stimata'},'orientation','horizontal','location','southoutside');
 
 nexttile; 
 % Plot phi_dot
 plot(phi_dot_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 plot(phi_dot_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
-xlim([0,400]); ylabel('phi\_dot');
+xlim([0,t_max/dt]); ylabel('phi\_dot');
 legend({'phi\_dot reale','phi\_dot stimata'},'orientation','horizontal','location','southoutside');
 title(t2,'EKF results'); xlabel(t2,'Time (sec)');
 
@@ -67,14 +67,14 @@ nexttile;
 % Plot psi
 plot(psi_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 plot(psi_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
-xlim([0,400]); ylabel('psi');
+xlim([0,t_max/dt]); ylabel('psi');
 legend({'psi reale','psi stimata'},'orientation','horizontal','location','southoutside');
 
 nexttile; 
 % Plot psi_dot
 plot(psi_dot_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 plot(psi_dot_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
-xlim([0,400]); ylabel('psi_dot');
+xlim([0,t_max/dt]); ylabel('psi_dot');
 legend({'psi\_dot reale','psi\_dot stimata'},'orientation','horizontal','location','southoutside');
 title(t3,'EKF results'); xlabel(t3,'Time (sec)');
 
