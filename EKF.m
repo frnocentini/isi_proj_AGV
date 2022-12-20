@@ -100,7 +100,7 @@ log_vars.theta_estimation_EKF = theta_estimation;
 log_vars.phi_dot_estimation_EKF = phi_dot_estimation;
 log_vars.psi_estimation_EKF = psi_estimation;
 log_vars.psi_dot_estimation_EKF = psi_dot_estimation;
-log_vars.innovation = innovation;
+log_vars.innovation_EKF = innovation;
 
 save('dataset','log_vars');
 
@@ -217,7 +217,6 @@ function [x_hat, P, innovation] = correction_EKF(x_hat, P, R, actual_meas, selec
         innovation(4) = e(counter);
     end
 
-    
     % Calcolo della covarianza associata all'innovazione
     S = H*P*H' + M*R*M';
     % Calcolo del guadagno di correzione

@@ -23,8 +23,6 @@ x_hat = log_vars.X_hat;
 P = log_vars.P;
 
 Q = diag([log_vars.std_dev_tau_phi^2, log_vars.std_dev_tau_psi^2]); %matrice di disturbo di processo
-R = diag([log_vars.std_dev_psi^2, log_vars.std_dev_phi_dot^2, ...
-          log_vars.std_dev_dx^2, log_vars.std_dev_db^2]); %matrice di errore di misura
 
 dt = log_vars.dt;
 t_max = log_vars.t_max;
@@ -43,13 +41,26 @@ matlabFunction(f,'File','state_function_f_UKF','Vars',{old_f});
 h = Jsym.h;
 matlabFunction(h,'File','observation_model_h_UKF','Vars',{old_h});
 
+selection_vector = [false false false false]';  % seleziona quali misure sono state usate all'iterazione corrente
+flag = [0 0 0 0]';  % tiene traccia dell'indice delle misure più recenti già utilizzate per ogni sensore
+actual_meas = [0 0 0 0]';   % contiene i valori delle misure utilizzate all'iterazione corrente
+
 k = 1;
 for t = dt:dt:t_max
 
     %prediction step
-    [x_hat(:,k+1), P] = prediction_UKF(x_hat(:,k), P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k));    %correction step
-    [x_hat(:,k+1), P, e(:,k+1)] = correction_UKF(x_hat(:,k+1), P, R, meas_sens_psi(k+1), meas_sens_phi_dot(k+1), meas_sens_dx(k+1), ...
-        meas_sens_db(k+1));
+    [x_hat(:,k+1), P] = prediction_UKF(x_hat(:,k), P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k)); 
+
+    % restituisce ad ogni passo il vettore con le misure dei sensori
+    % effettive e disponibili che non erano già state prese
+    [actual_meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, meas_sens_dx, ...
+                                                         meas_sens_db, flag, selection_vector, k, dt);
+
+    R = diag([log_vars.std_dev_psi^2, log_vars.std_dev_phi_dot^2, ...
+          log_vars.std_dev_dx^2, log_vars.std_dev_db^2]);   % matrice di errore di misura
+
+    %correction step
+    [x_hat(:,k+1), P, innovation(:,k+1)] = correction_UKF(x_hat(:,k+1), P, R, actual_meas, selection_vector);
 
     k = k + 1;
 end
@@ -68,17 +79,18 @@ log_vars.theta_estimation_UKF = theta_estimation;
 log_vars.phi_dot_estimation_UKF = phi_dot_estimation;
 log_vars.psi_estimation_UKF = psi_estimation;
 log_vars.psi_dot_estimation_UKF = psi_dot_estimation;
-log_vars.innovation_UKF = [e];
+log_vars.innovation_UKF = innovation;
 
 save('dataset','log_vars');
 
+% Funzioni:
 
 function  [x_hat, P] = prediction_UKF(x_hat, P, Q, dt, tau_phi, tau_psi)
     [x_hat, P] = UT_F([x_hat; 0; 0], blkdiag(P, Q), dt, tau_phi, tau_psi);
 end
 
+
 function [sample_mean, sample_cov] = UT_F(prior_mean, prior_cov, dt, tau_phi, tau_psi)
-    
     % Parametri dell'algoritmo SUT che descrivono quanto sono scalati i
     % sigma point simmetrici rispetto al valore centrale
     alpha = 1;            % UT non scalata (lambda = k)
@@ -136,30 +148,99 @@ function [sample_mean, sample_cov] = UT_F(prior_mean, prior_cov, dt, tau_phi, ta
 end
 
 
-function [x_hat, P, e] = correction_UKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db)
-    [hat_y, S, Pxy] = UT_H(x_hat, P, meas_psi, meas_phi_dot, meas_dx, meas_db);
+function [x_hat, P, innovation] = correction_UKF(x_hat, P, R, actual_meas, selection_vector)
+    [hat_y, S, Pxy] = UT_H(x_hat, P);
     
     % calcolo dell'innovazione
-    y = [meas_psi, meas_phi_dot, meas_dx, meas_db]';
-    e = y - hat_y;
-    e(1) = wrapToPi(e(1,1))
-    % calcolo della covarianza associata all'innovazione aggiungendo il
-    % rumore
+    innovation = [0 0 0 0]';
+    counter = 0;
+    if selection_vector(1) == false     % ridimensiona le matrici se la misura di psi non viene utilizzata
+        hat_y(1) = [];
+        S(1,:) = [];
+        S(:,1) = [];
+        R(1,:) = [];
+        R(:,1) = [];
+        Pxy(:,1) = [];
+        innovation(1) = 100;    % 100 indica sul vettore innovation che la misura non è stata utilizzata
+        counter = counter + 1;
+    end
+
+    if selection_vector(2) == false     % ridimensiona le matrici se la misura di phi_dot non viene utilizzata 
+        hat_y(2-counter) = [];
+        S(2-counter,:) = [];
+        S(:,2-counter) = [];
+        R(2-counter,:) = [];
+        R(:,2-counter) = [];
+        Pxy(:,2-counter) = [];
+        innovation(2) = 100;    % 100 indica sul vettore innovation che la misura non è stata utilizzata
+        counter = counter + 1;
+    end
+    
+    if selection_vector(3) == false     % ridimensiona le matrici se la misura di dx non viene utilizzata
+        hat_y(3-counter) = [];
+        S(3-counter,:) = [];
+        S(:,3-counter) = [];
+        R(3-counter,:) = [];
+        R(:,3-counter) = [];
+        Pxy(:,3-counter) = [];
+        innovation(3) = 100;    % 100 indica sul vettore innovation che la misura non è stata utilizzata
+        counter = counter + 1;
+    end
+    
+    if selection_vector(4) == false     % ridimensiona le matrici se la misura di db non viene utilizzata
+        hat_y(4-counter) = [];
+        S(4-counter,:) = [];
+        S(:,4-counter) = [];
+        R(4-counter,:) = [];
+        R(:,4-counter) = [];
+        Pxy(:,4-counter) = [];
+        innovation(4) = 100;    % 100 indica sul vettore innovation che la misura non è stata utilizzata
+    end
+
+    % innovazione attuale con solo le misure correnti fornite dai sensori
+    e = actual_meas' - hat_y;
+    
+    counter = 0;
+    if selection_vector(1) == true
+        e(1) = wrapToPi(e(1,1));
+        counter = counter + 1;
+        innovation(1) = e(counter);
+    end
+
+    if selection_vector(2) == true
+        counter = counter + 1;
+        innovation(2) = e(counter);
+    end
+
+    if selection_vector(3) == true
+        counter = counter + 1;
+        innovation(3) = e(counter);
+    end
+
+    if selection_vector(4) == true
+        counter = counter + 1;
+        innovation(4) = e(counter);
+    end
+
+    % Calcolo della covarianza associata all'innovazione aggiungendo il rumore
     S = S + R;
-    % calcolo del guadagno di correzione
+    % Calcolo del guadagno di correzione
     L = Pxy*(S)^(-1);
     
-    %stima statica BLUE
-    x_hat = x_hat + L*e;
-    x_hat(3) = wrapTo2Pi(x_hat(3));
-    x_hat(5) = wrapToPi(x_hat(5));
-    %calcolo della P con la forma di Joseph
-    P = P - L*S*L';
-    
+    % Stima statica BLUE
+    if(isempty(e) == true)  % se non ci sono misure disponibili non viene fatta correzione
+        x_hat = x_hat;
+        P = P;
+    else
+        x_hat = x_hat + L*e;
+        x_hat(3) = wrapTo2Pi(x_hat(3));
+        x_hat(5) = wrapToPi(x_hat(5));
+        % Calcolo della P
+        P = P - L*S*L';
+    end    
 end
 
-function [pred_meas, pred_meas_cov, cross_cov] = UT_H(prior_mean, prior_cov, ...
-    meas_psi, meas_phi_dot, meas_dx, meas_db)
+function [pred_meas, pred_meas_cov, cross_cov] = UT_H(prior_mean, prior_cov)
     % Parametri dell'algoritmo SUT che descrivono quanto sono scalati i
     % sigma point simmetrici rispetto al valore centrale
     alpha = 1;            % UT non scalata (lambda = k)
@@ -213,5 +294,77 @@ function [pred_meas, pred_meas_cov, cross_cov] = UT_H(prior_mean, prior_cov, ...
     for i = 1:size(sigma_points,2)
         pred_meas_cov = pred_meas_cov + w_cov(i)*tilde(:,i)*tilde(:,i)';
         cross_cov = cross_cov + w_cov(i)*(sigma_points(:,i) - prior_mean)*tilde(:,i)';
+    end
+end
+
+
+function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, ...
+                                            meas_sens_dx, meas_sens_db, flag, selection_vector, in, dt)
+    meas = [];  % vettore dei valori delle misure attuali
+    
+    % all'interno dei cicli while si ricava l'ultima misura disponibile
+    % fornita dai sensori; se non c'è nessuna misura allora non si aggiorna
+    % la variabile flag
+
+    % MISURA DI PSI:
+    count = 0;  % indica se sono entrato nel while
+    while(((flag(1)) < size(meas_sens_psi.data,1)) && (meas_sens_psi.time(flag(1)+1) <= dt*in))
+        count = count + 1;
+        flag(1) = flag(1) + 1;
+    end
+    
+    count_size_meas = 0;
+    if(count == 0)
+        selection_vector(1) = false;    % non c'è nessuna misura disponibile
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(1) = true;     % la misura è disponibile
+        meas(count_size_meas) = meas_sens_psi.data(flag(1));    % salvo la misura su meas[]
+    end
+    
+    % MISURA DI PHI_DOT
+    count = 0;  % indica se sono entrato nel while
+    while(((flag(2)) < size(meas_sens_phi_dot.data,1)) && (meas_sens_phi_dot.time(flag(2)+1) <= dt*in))
+        count = count + 1;
+        flag(2) = flag(2) + 1;
+    end
+
+    if(count == 0)
+        selection_vector(2) = false;    % non c'è nessuna misura disponibile
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(2) = true;     % la misura è disponibile
+        meas(count_size_meas) = meas_sens_phi_dot.data(flag(2));    % salvo la misura su meas[]
+    end
+    
+    % MISURA DI DX
+    count = 0;  % indica se sono entrato nel while
+    while(((flag(3)) < size(meas_sens_dx.data,1)) && (meas_sens_dx.time(flag(3)+1) <= dt*in))
+        count = count + 1;
+        flag(3) = flag(3) + 1;
+    end
+
+    if(count == 0)
+        selection_vector(3) = false;    % non c'è nessuna misura disponibile
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(3) = true;     % la misura è disponibile
+        meas(count_size_meas) = meas_sens_dx.data(flag(3));     % salvo la misura su meas[]
+    end
+    
+    % MISURA DI DB
+    count = 0;  % indica se sono entrato nel while
+    while(((flag(4)) < size(meas_sens_db.data,1)) && (meas_sens_db.time(flag(4)+1) <= dt*in))
+        count = count + 1;
+        flag(4) = flag(4) + 1;
+    end
+
+
+    if(count == 0)
+        selection_vector(4) = false;    % non c'è nessuna misura disponibile
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(4) = true;     % la misura è disponibile
+        meas(count_size_meas) = meas_sens_db.data(flag(4));     % salvo la misura su meas[]
     end
 end
