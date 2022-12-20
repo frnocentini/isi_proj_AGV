@@ -81,7 +81,7 @@ for t = dt:dt:t_max
           log_vars.std_dev_dx^2, log_vars.std_dev_db^2]); %matrice di errore di misura
 
     % correction step
-    [x_hat(:,k+1), P, innovation(:,k)] = correction_EKF(x_hat(:,k+1), P, R, actual_meas, selection_vector);
+    [x_hat(:,k+1), P, innovation(:,k+1)] = correction_EKF(x_hat(:,k+1), P, R, actual_meas, selection_vector);
 
     k = k + 1;
 end
