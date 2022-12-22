@@ -12,7 +12,7 @@ psi_dot_real = log_vars.psi_dot_real;
 t_max = log_vars.t_max;
 dt = log_vars.dt;
 innovation_EKF = log_vars.innovation_EKF;
-%innovation_UKF = log_vars.innovation_UKF;
+innovation_UKF = log_vars.innovation_UKF;
 dt = log_vars.dt;
 
 %% Plot EKF
@@ -40,7 +40,7 @@ plot(y_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on;
 plot(y_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
 xlim([0,t_max/dt]); ylabel('y');
 legend({'y reale','y stimata'},'orientation','horizontal','location','southoutside');
-title(t1,'EKF results'); xlabel(t1,'Time (sec)');
+title(t1,'EKF results'); xlabel(t1, 'Iterations');
 
 
 figure(2);
@@ -58,7 +58,7 @@ plot(phi_dot_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on;
 plot(phi_dot_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
 xlim([0,t_max/dt]); ylabel('phi\_dot');
 legend({'phi\_dot reale','phi\_dot stimata'},'orientation','horizontal','location','southoutside');
-title(t2,'EKF results'); xlabel(t2,'Time (sec)');
+title(t2,'EKF results'); xlabel(t2, 'Iterations');
 
 
 figure(3);
@@ -76,7 +76,7 @@ plot(psi_dot_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on;
 plot(psi_dot_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
 xlim([0,t_max/dt]); ylabel('psi_dot');
 legend({'psi\_dot reale','psi\_dot stimata'},'orientation','horizontal','location','southoutside');
-title(t3,'EKF results'); xlabel(t3,'Time (sec)');
+title(t3,'EKF results'); xlabel(t3, 'Iterations');
 
 % Plot innovazione lungo tutte le componenti
 figure(4);
@@ -110,7 +110,7 @@ end
 xlim([0,t_max]); 
 %plot(innovation_EKF(2,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on;
 legend('Innovazione per phi\_dot','orientation','horizontal','location','southoutside');
-title(t1,'Innovazione EKF'); xlabel(t1,'Time (sec)');
+title(t1,'Innovazione EKF'); xlabel(t1,'Time (s)');
 
 
 figure(5);
@@ -144,7 +144,7 @@ end
 xlim([0,t_max]); ylim([-1,1]);
 %plot(innovation_EKF(4,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 legend('Innovazione per db','orientation','horizontal','location','southoutside');
-title(t2,'Innovazione EKF'); xlabel(t2,'Time (sec)');
+title(t2,'Innovazione EKF'); xlabel(t2,'Time (s)');
 
 %% Plot UKF
 
@@ -162,16 +162,16 @@ nexttile;
 % Plot x
 plot(x_real,'LineWidth',1, color = '[0.9290 0.6940 0.1250]'); hold on; 
 plot(x_estimation_UKF,'LineWidth',1, color = '[0.4940 0.1840 0.5560]');
-xlim([0,400]); ylabel('x'); 
+xlim([0,t_max/dt]); ylabel('x'); 
 legend({'x reale','x stimata'},'orientation','horizontal','location','southoutside');
 
 nexttile; 
 % Plot y
 plot(y_real,'LineWidth',1, color = '[0.9290 0.6940 0.1250]'); hold on;
 plot(y_estimation_UKF,'LineWidth',1, color = '[0.4940 0.1840 0.5560]');
-xlim([0,400]); ylabel('y');
+xlim([0,t_max/dt]); ylabel('y');
 legend({'y reale','y stimata'},'orientation','horizontal','location','southoutside');
-title(t1,'UKF results'); xlabel(t1,'Time (sec)');
+title(t1,'UKF results'); xlabel(t1, 'Iterations');
 
 
 figure(2);
@@ -180,16 +180,16 @@ nexttile;
 % Plot theta
 plot(theta_real,'LineWidth',1, color = '[0.9290 0.6940 0.1250]'); hold on;
 plot(theta_estimation_UKF,'LineWidth',1, color = '[0.4940 0.1840 0.5560]');
-xlim([0,400]); ylabel('theta');
+xlim([0,t_max/dt]); ylabel('theta');
 legend({'theta reale','theta stimata'},'orientation','horizontal','location','southoutside');
 
 nexttile; 
 % Plot phi_dot
 plot(phi_dot_real,'LineWidth',1,color = '[0.9290 0.6940 0.1250]'); hold on;
 plot(phi_dot_estimation_UKF,'LineWidth',1, color = '[0.4940 0.1840 0.5560]');
-xlim([0,400]); ylabel('phi_dot');
+xlim([0,t_max/dt]); ylabel('phi_dot');
 legend({'phi\_dot reale','phi\_dot stimata'},'orientation','horizontal','location','southoutside');
-title(t2,'UKF results'); xlabel(t2,'Time (sec)');
+title(t2,'UKF results'); xlabel(t2, 'Iterations');
 
 
 figure(3);
@@ -198,16 +198,16 @@ nexttile;
 % Plot psi
 plot(psi_real,'LineWidth',1, color = '[0.9290 0.6940 0.1250]'); hold on;
 plot(psi_estimation_UKF,'LineWidth',1, color = '[0.4940 0.1840 0.5560]');
-xlim([0,400]); ylabel('psi');
+xlim([0,t_max/dt]); ylabel('psi');
 legend({'psi reale','psi stimata'},'orientation','horizontal','location','southoutside');
 
 nexttile; 
 % Plot psi_dot
 plot(psi_dot_real,'LineWidth',1, color = '[0.9290 0.6940 0.1250]'); hold on; 
 plot(psi_dot_estimation_UKF,'LineWidth',1, color = '[0.4940 0.1840 0.5560]');
-xlim([0,400]); ylabel('psi_dot');
+xlim([0,t_max/dt]); ylabel('psi_dot');
 legend({'psi\_dot reale','psi\_dot stimata'},'orientation','horizontal','location','southoutside');
-title(t3,'UKF results'); xlabel(t3,'Time (sec)');
+title(t3,'UKF results'); xlabel(t3, 'Iterations');
 
 % Plot innovazione lungo tutte le componenti
 figure(4);
@@ -239,7 +239,7 @@ for i = 1 : size(innovation_UKF,2)
 end
 xlim([0,t_max]); 
 legend('Innovazione per phi\_dot','orientation','horizontal','location','southoutside');
-title(t1,'Innovazione UKF'); xlabel(t1,'Time (sec)');
+title(t1,'Innovazione UKF'); xlabel(t1,'Time (s)');
 
 
 figure(5);
@@ -271,7 +271,7 @@ for i = 1 : size(innovation_UKF,2)
 end
 xlim([0,t_max]); ylim([-1,1]);
 legend('Innovazione per db','orientation','horizontal','location','southoutside');
-title(t2,'Innovazione UKF'); xlabel(t2,'Time (sec)');
+title(t2,'Innovazione UKF'); xlabel(t2,'Time (s)');
 
 %% Plot della traiettoria risultante dallo stimatore EKF
 close all
