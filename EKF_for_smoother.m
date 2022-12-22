@@ -59,6 +59,11 @@ M = Jsym.M;
 matlabFunction(M,'File','jacobian_M','Vars',{old_h});
 
 
+selection_vector = [false false false false]';  % seleziona quali misure sono state usate all'iterazione corrente
+flag = [0 0 0 0]';  % tiene traccia dell'indice delle misure più recenti già utilizzate per ogni sensore
+actual_meas = [0 0 0 0]';   % contiene i valori delle misure utilizzate all'iterazione corrente
+
+
 k = 0;
 for t = dt:dt:t_max
     
@@ -68,10 +73,14 @@ for t = dt:dt:t_max
     log_EKF(k).x_hat_pred= x_hat;
     log_EKF(k).P_pred = P;
     log_EKF(k).F_matrix = F;
+    
+    % restituisce ad ogni passo il vettore con le misure dei sensori
+    % effettive e disponibili che non erano già state prese
+    [actual_meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, meas_sens_dx, ...
+                                                         meas_sens_db, flag, selection_vector, k+1, dt);
 
     %correction step
-    [x_hat, P] = correction_EKF(x_hat, P, R, meas_sens_psi(k+1), meas_sens_phi_dot(k+1), meas_sens_dx(k+1), ...
-                                        meas_sens_db(k+1));
+    [x_hat, P] = correction_EKF(x_hat, P, R, actual_meas, selection_vector);
 
     log_EKF(k).x_hat_corr= x_hat;
     log_EKF(k).P_corr = P;
@@ -80,23 +89,7 @@ for t = dt:dt:t_max
 end
 
   save('EKF_struct', 'log_EKF');
-% Salvataggio nel dataset delle variabili per i plot
-% [x_estimation]=[x_hat(1,:)]';
-% [y_estimation]=[x_hat(2,:)]';
-% [theta_estimation] = [x_hat(3,:)]';
-% [phi_dot_estimation] = [x_hat(4,:)]';
-% [psi_estimation] = [x_hat(5,:)]';
-% [psi_dot_estimation] = [x_hat(6,:)]';
-% 
-% log_vars.x_estimation_EKF = x_estimation;
-% log_vars.y_estimation_EKF = y_estimation;
-% log_vars.theta_estimation_EKF = theta_estimation;
-% log_vars.phi_dot_estimation_EKF = phi_dot_estimation;
-% log_vars.psi_estimation_EKF = psi_estimation;
-% log_vars.psi_dot_estimation_EKF = psi_dot_estimation;
-% log_vars.innovation = [e];
 
-% save('dataset','log_vars');
 
 % Funzioni:
 function  [x_hat, P, F] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi)
@@ -123,7 +116,7 @@ function  [x_hat, P, F] = prediction_EKF(x_hat, P, Q, dt, tau_phi, tau_psi)
     P = F*P*F' + T*Q*T';
 end
 
-function [x_hat, P] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_dx, meas_db)
+function [x_hat, P] = correction_EKF(x_hat, P, R, actual_meas, selection_vector)
     % Calcolo dei jacobiani numerici:
     new = [x_hat; 0; 0; 0; 0];
     % Jacobiani numerici calcolati con matlabFunction
@@ -139,19 +132,164 @@ function [x_hat, P] = correction_EKF(x_hat, P, R, meas_psi, meas_phi_dot, meas_d
 %     % Modello di misura numerico calcolato con subs
 %     h = double(subs(Jsym.h, old_h, new));
 
-    % Calcolo dell'innovazione
-    e = [meas_psi; meas_phi_dot; meas_dx; meas_db] - h;
-    e(1) = wrapToPi(e(1,1))
     
+    % Calcolo dell'innovazione
+    innovation = [0 0 0 0]';
+    counter = 0;
+    if selection_vector(1) == false     % ridimensiona le matrici se la misura di psi non viene utilizzata
+        h(1) = [];
+        H(1,:) = [];
+        M(1,:) = [];
+        M(:,1) = [];
+        R(1,:) = [];
+        R(:,1) = [];
+        innovation(1) = 100;    % 100 indica sul vettore innovation che la misura non è stata utilizzata
+        counter = counter + 1;
+    end
+
+    if selection_vector(2) == false     % ridimensiona le matrici se la misura di phi_dot non viene utilizzata 
+        h(2-counter) = [];
+        H(2-counter,:) = [];
+        M(2-counter,:) = [];
+        M(:,2-counter) = [];
+        R(2-counter,:) = [];
+        R(:,2-counter) = [];
+        innovation(2) = 100;    % 100 indica sul vettore innovation che la misura non è stata utilizzata
+        counter = counter + 1;
+    end
+    
+    if selection_vector(3) == false     % ridimensiona le matrici se la misura di dx non viene utilizzata
+        h(3-counter) = [];
+        H(3-counter,:) = [];
+        M(3-counter,:) = [];
+        M(:,3-counter) = [];
+        R(3-counter,:) = [];
+        R(:,3-counter) = [];
+        innovation(3) = 100;    % 100 indica sul vettore innovation che la misura non è stata utilizzata
+        counter = counter + 1;
+    end
+    
+    if selection_vector(4) == false     % ridimensiona le matrici se la misura di db non viene utilizzata
+        h(4-counter) = [];
+        H(4-counter,:) = [];
+        M(4-counter,:) = [];
+        M(:,4-counter) = [];
+        R(4-counter,:) = [];
+        R(:,4-counter) = [];
+        innovation(4) = 100;    % 100 indica sul vettore innovation che la misura non è stata utilizzata
+    end
+    
+    % innovazione attuale con solo le misure correnti fornite dai sensori
+    e = actual_meas' - h
+    
+    counter = 0;
+    if selection_vector(1) == true
+        e(1) = wrapToPi(e(1,1));
+        counter = counter + 1;
+        innovation(1) = e(counter);
+    end
+
+    if selection_vector(2) == true
+        counter = counter + 1;
+        innovation(2) = e(counter);
+    end
+
+    if selection_vector(3) == true
+        counter = counter + 1;
+        innovation(3) = e(counter);
+    end
+
+    if selection_vector(4) == true
+        counter = counter + 1;
+        innovation(4) = e(counter);
+    end
+
     % Calcolo della covarianza associata all'innovazione
     S = H*P*H' + M*R*M';
     % Calcolo del guadagno di correzione
     L = P*H'*inv(S);
-
+    
     % Stima statica BLUE
-    x_hat = x_hat + L*e;
-    x_hat(3) = wrapTo2Pi(x_hat(3));
-    x_hat(5) = wrapToPi(x_hat(5));
-    % Calcolo della P con la forma di Joseph
-    P = (eye(6) - L*H)*P*(eye(6) - L*H)' + L*M*R*M'*L';
+    if(isempty(e) == true)  % se non ci sono misure disponibili non viene fatta correzione
+        x_hat = x_hat;
+        P = P;
+    else
+        x_hat = x_hat + L*e;
+        x_hat(3) = wrapTo2Pi(x_hat(3));
+        x_hat(5) = wrapToPi(x_hat(5));
+        % Calcolo della P con la forma di Joseph
+        P = (eye(6) - L*H)*P*(eye(6) - L*H)' + L*M*R*M'*L';
+    end
 end
+
+function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, ...
+                                            meas_sens_dx, meas_sens_db, flag, selection_vector, in, dt)
+    meas = [];  % vettore dei valori delle misure attuali
+    
+    % all'interno dei cicli while si ricava l'ultima misura disponibile
+    % fornita dai sensori; se non c'è nessuna misura allora non si aggiorna
+    % la variabile flag
+
+    % MISURA DI PSI:
+    count = 0;  % indica se sono entrato nel while
+    while(((flag(1)) < size(meas_sens_psi.data,1)) && (meas_sens_psi.time(flag(1)+1) <= dt*in))
+        count = count + 1;
+        flag(1) = flag(1) + 1;
+    end
+    
+    count_size_meas = 0;
+    if(count == 0)
+        selection_vector(1) = false;    % non c'è nessuna misura disponibile
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(1) = true;     % la misura è disponibile
+        meas(count_size_meas) = meas_sens_psi.data(flag(1));    % salvo la misura su meas[]
+    end
+    
+    % MISURA DI PHI_DOT
+    count = 0;  % indica se sono entrato nel while
+    while(((flag(2)) < size(meas_sens_phi_dot.data,1)) && (meas_sens_phi_dot.time(flag(2)+1) <= dt*in))
+        count = count + 1;
+        flag(2) = flag(2) + 1;
+    end
+
+    if(count == 0)
+        selection_vector(2) = false;    % non c'è nessuna misura disponibile
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(2) = true;     % la misura è disponibile
+        meas(count_size_meas) = meas_sens_phi_dot.data(flag(2));    % salvo la misura su meas[]
+    end
+    
+    % MISURA DI DX
+    count = 0;  % indica se sono entrato nel while
+    while(((flag(3)) < size(meas_sens_dx.data,1)) && (meas_sens_dx.time(flag(3)+1) <= dt*in))
+        count = count + 1;
+        flag(3) = flag(3) + 1;
+    end
+
+    if(count == 0)
+        selection_vector(3) = false;    % non c'è nessuna misura disponibile
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(3) = true;     % la misura è disponibile
+        meas(count_size_meas) = meas_sens_dx.data(flag(3));     % salvo la misura su meas[]
+    end
+    
+    % MISURA DI DB
+    count = 0;  % indica se sono entrato nel while
+    while(((flag(4)) < size(meas_sens_db.data,1)) && (meas_sens_db.time(flag(4)+1) <= dt*in))
+        count = count + 1;
+        flag(4) = flag(4) + 1;
+    end
+
+
+    if(count == 0)
+        selection_vector(4) = false;    % non c'è nessuna misura disponibile
+    else
+        count_size_meas = count_size_meas + 1;
+        selection_vector(4) = true;     % la misura è disponibile
+        meas(count_size_meas) = meas_sens_db.data(flag(4));     % salvo la misura su meas[]
+    end
+end
+
