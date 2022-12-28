@@ -12,7 +12,7 @@ psi_dot_real = log_vars.psi_dot_real;
 t_max = log_vars.t_max;
 dt = log_vars.dt;
 innovation_EKF = log_vars.innovation_EKF;
-innovation_UKF = log_vars.innovation_UKF;
+%innovation_UKF = log_vars.innovation_UKF;
 dt = log_vars.dt;
 
 x_estimation_EKF = log_vars.x_estimation_EKF;
@@ -23,17 +23,14 @@ psi_estimation_EKF = log_vars.psi_estimation_EKF;
 psi_dot_estimation_EKF = log_vars.psi_dot_estimation_EKF;
 
 
-x_estimation_UKF = log_vars.x_estimation_UKF;
-y_estimation_UKF = log_vars.y_estimation_UKF;
-theta_estimation_UKF = log_vars.theta_estimation_UKF;
-phi_dot_estimation_UKF = log_vars.phi_dot_estimation_UKF;
-psi_estimation_UKF = log_vars.psi_estimation_UKF;
-psi_dot_estimation_UKF = log_vars.psi_dot_estimation_UKF;
+% x_estimation_UKF = log_vars.x_estimation_UKF;
+% y_estimation_UKF = log_vars.y_estimation_UKF;
+% theta_estimation_UKF = log_vars.theta_estimation_UKF;
+% phi_dot_estimation_UKF = log_vars.phi_dot_estimation_UKF;
+% psi_estimation_UKF = log_vars.psi_estimation_UKF;
+% psi_dot_estimation_UKF = log_vars.psi_dot_estimation_UKF;
 
 %% Plot EKF
-
-
-
 
 figure(1);
 t1 = tiledlayout(2,1);
@@ -155,6 +152,56 @@ xlim([0,t_max]); ylim([-1,1]);
 %plot(innovation_EKF(4,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 legend('Innovazione per db','orientation','horizontal','location','southoutside');
 title(t2,'Innovazione EKF'); xlabel(t2,'Time (s)');
+
+% Plot dell'errore di stima (differenza tra stato stimato e stato reale)
+estimation_error(1,:) = [x_real - x_estimation_EKF]';
+estimation_error(2,:) = [y_real - y_estimation_EKF]';
+estimation_error(3,:) = [theta_real - theta_estimation_EKF]';
+estimation_error(4,:) = [phi_dot_real - phi_dot_estimation_EKF]';
+estimation_error(5,:) = [psi_real - psi_estimation_EKF];
+estimation_error(6,:) = [psi_dot_real - psi_dot_estimation_EKF];
+
+figure(6);
+t1 = tiledlayout(2,1);
+nexttile; 
+% Plot x
+plot(estimation_error(1,:),'LineWidth',1, color = '[0.4940 0.1840 0.5560]');
+xlim([0,t_max/dt]); ylabel('estimation error for x');
+
+nexttile; 
+% Plot y
+plot(estimation_error(2,:),'LineWidth',1, color = '[0.4940 0.1840 0.5560]');
+xlim([0,t_max/dt]); ylabel('estimation error for y');
+title(t1,'EKF estimation error'); xlabel(t1, 'Iterations');
+
+
+figure(7);
+t2 = tiledlayout(2,1);
+nexttile; 
+% Plot theta
+plot(estimation_error(3,:),'LineWidth',1, color = '[0.4940 0.1840 0.5560]'); 
+xlim([0,t_max/dt]); ylabel('estimation error for theta');
+
+nexttile; 
+% Plot phi_dot
+plot(estimation_error(4,:),'LineWidth',1, color = '[0.4940 0.1840 0.5560]');  
+xlim([0,t_max/dt]); ylabel('estimation error for phi_dot');
+title(t2,'EKF estimation error'); xlabel(t2, 'Iterations');
+
+
+figure(8);
+t3 = tiledlayout(2,1);
+nexttile; 
+% Plot psi
+plot(estimation_error(5,:),'LineWidth',1, color = '[0.4940 0.1840 0.5560]'); 
+xlim([0,t_max/dt]); ylabel('estimation error for phi_dot');
+
+nexttile; 
+% Plot psi_dot
+plot(estimation_error(6,:),'LineWidth',1, color = '[0.4940 0.1840 0.5560]');
+xlim([0,t_max/dt]); ylabel('estimation error for phi_dot');
+title(t3,'EKF estimation error'); xlabel(t3, 'Iterations');
+
 
 %% Plot UKF
 
