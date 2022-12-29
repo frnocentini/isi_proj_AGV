@@ -32,8 +32,6 @@ x_hat = log_vars.X_hat;     % stima iniziale
 P = log_vars.P;             % matrice di covarianza associata
 
 Q = diag([log_vars.std_dev_tau_phi^2, log_vars.std_dev_tau_psi^2]); %matrice di disturbo di processo
-R = diag([log_vars.std_dev_psi^2, log_vars.std_dev_phi_dot^2, ...
-          log_vars.std_dev_dx^2, log_vars.std_dev_db^2]); %matrice di errore di misura
 
 % Funzioni simboliche per il calcolo della funzione di stato, del modello
 % di misura e dei rispettivi jacobiani:
@@ -64,10 +62,9 @@ flag = [0 0 0 0]';  % tiene traccia dell'indice delle misure più recenti già u
 actual_meas = [0 0 0 0]';   % contiene i valori delle misure utilizzate all'iterazione corrente
 
 
-k = 0;
+k = 1;
 for t = dt:dt:t_max
     
-    k = k+1;
     %prediction step
     [x_hat, P, F] = prediction_EKF(x_hat, P, Q, dt, log_vars.tau_phi(k), log_vars.tau_psi(k));
     log_EKF(k).x_hat_pred= x_hat;
@@ -77,7 +74,9 @@ for t = dt:dt:t_max
     % restituisce ad ogni passo il vettore con le misure dei sensori
     % effettive e disponibili che non erano già state prese
     [actual_meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, meas_sens_dx, ...
-                                                         meas_sens_db, flag, selection_vector, k+1, dt);
+                                                         meas_sens_db, flag, selection_vector, k, dt);
+    R = diag([log_vars.std_dev_psi^2, log_vars.std_dev_phi_dot^2, ...
+          log_vars.std_dev_dx^2, log_vars.std_dev_db^2]); %matrice di errore di misura
 
     %correction step
     [x_hat, P] = correction_EKF(x_hat, P, R, actual_meas, selection_vector);
@@ -85,7 +84,7 @@ for t = dt:dt:t_max
     log_EKF(k).x_hat_corr= x_hat;
     log_EKF(k).P_corr = P;
 
-    
+    k = k + 1;
 end
 
   save('EKF_struct', 'log_EKF');
@@ -223,7 +222,7 @@ function [x_hat, P] = correction_EKF(x_hat, P, R, actual_meas, selection_vector)
 end
 
 function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens_phi_dot, ...
-                                            meas_sens_dx, meas_sens_db, flag, selection_vector, in, dt)
+                                            meas_sens_dx, meas_sens_db, flag, selection_vector, k, dt)
     meas = [];  % vettore dei valori delle misure attuali
     
     % all'interno dei cicli while si ricava l'ultima misura disponibile
@@ -232,7 +231,7 @@ function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens
 
     % MISURA DI PSI:
     count = 0;  % indica se sono entrato nel while
-    while(((flag(1)) < size(meas_sens_psi.data,1)) && (meas_sens_psi.time(flag(1)+1) <= dt*in))
+    while(((flag(1)) < size(meas_sens_psi.data,1)) && (meas_sens_psi.time(flag(1)+1) <= dt*k))
         count = count + 1;
         flag(1) = flag(1) + 1;
     end
@@ -248,7 +247,7 @@ function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens
     
     % MISURA DI PHI_DOT
     count = 0;  % indica se sono entrato nel while
-    while(((flag(2)) < size(meas_sens_phi_dot.data,1)) && (meas_sens_phi_dot.time(flag(2)+1) <= dt*in))
+    while(((flag(2)) < size(meas_sens_phi_dot.data,1)) && (meas_sens_phi_dot.time(flag(2)+1) <= dt*k))
         count = count + 1;
         flag(2) = flag(2) + 1;
     end
@@ -263,7 +262,7 @@ function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens
     
     % MISURA DI DX
     count = 0;  % indica se sono entrato nel while
-    while(((flag(3)) < size(meas_sens_dx.data,1)) && (meas_sens_dx.time(flag(3)+1) <= dt*in))
+    while(((flag(3)) < size(meas_sens_dx.data,1)) && (meas_sens_dx.time(flag(3)+1) <= dt*k))
         count = count + 1;
         flag(3) = flag(3) + 1;
     end
@@ -278,7 +277,7 @@ function [meas, selection_vector, flag] = getActualMeas(meas_sens_psi, meas_sens
     
     % MISURA DI DB
     count = 0;  % indica se sono entrato nel while
-    while(((flag(4)) < size(meas_sens_db.data,1)) && (meas_sens_db.time(flag(4)+1) <= dt*in))
+    while(((flag(4)) < size(meas_sens_db.data,1)) && (meas_sens_db.time(flag(4)+1) <= dt*k))
         count = count + 1;
         flag(4) = flag(4) + 1;
     end
