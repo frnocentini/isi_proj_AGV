@@ -63,8 +63,8 @@ nexttile;
 % Plot phi_dot
 plot(phi_dot_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 plot(phi_dot_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
-xlim([0,t_max/dt]); ylabel('phi\_dot');
-legend({'phi\_dot reale','phi\_dot stimata'},'orientation','horizontal','location','southoutside');
+xlim([0,t_max/dt]); ylabel('phi\_{dot}');
+legend({'phi\_{dot} reale','phi\_{dot} stimata'},'orientation','horizontal','location','southoutside');
 title(t2,'EKF results'); xlabel(t2, 'Iterations');
 
 
@@ -81,8 +81,8 @@ nexttile;
 % Plot psi_dot
 plot(psi_dot_real,'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on; 
 plot(psi_dot_estimation_EKF,'LineWidth',1, color = '[0.6350 0.0780 0.1840]');
-xlim([0,t_max/dt]); ylabel('psi_dot');
-legend({'psi\_dot reale','psi\_dot stimata'},'orientation','horizontal','location','southoutside');
+xlim([0,t_max/dt]); ylabel('psi_{dot}');
+legend({'psi\_{dot} reale','psi\_{dot} stimata'},'orientation','horizontal','location','southoutside');
 title(t3,'EKF results'); xlabel(t3, 'Iterations');
 
 % Plot innovazione lungo tutte le componenti
@@ -116,7 +116,7 @@ for i = 1 : size(innovation_EKF,2)
 end
 xlim([0,t_max]); 
 %plot(innovation_EKF(2,:),'LineWidth',1, color = '[0.3010 0.7450 0.9330]'); hold on;
-legend('Innovazione per phi\_dot','orientation','horizontal','location','southoutside');
+legend('Innovazione per phi\_{dot}','orientation','horizontal','location','southoutside');
 title(t1,'Innovazione EKF'); xlabel(t1,'Time (s)');
 
 
@@ -185,7 +185,7 @@ xlim([0,t_max/dt]); ylabel('estimation error for theta');
 nexttile; 
 % Plot phi_dot
 plot(estimation_error(4,:),'LineWidth',1, color = '[0.4940 0.1840 0.5560]');  
-xlim([0,t_max/dt]); ylabel('estimation error for phi_dot');
+xlim([0,t_max/dt]); ylabel('estimation error for phi_{dot}');
 title(t2,'EKF estimation error'); xlabel(t2, 'Iterations');
 
 
@@ -194,12 +194,12 @@ t3 = tiledlayout(2,1);
 nexttile; 
 % Plot psi
 plot(estimation_error(5,:),'LineWidth',1, color = '[0.4940 0.1840 0.5560]'); 
-xlim([0,t_max/dt]); ylabel('estimation error for phi_dot');
+xlim([0,t_max/dt]); ylabel('estimation error for psi');
 
 nexttile; 
 % Plot psi_dot
 plot(estimation_error(6,:),'LineWidth',1, color = '[0.4940 0.1840 0.5560]');
-xlim([0,t_max/dt]); ylabel('estimation error for phi_dot');
+xlim([0,t_max/dt]); ylabel('estimation error for psi_{dot}');
 title(t3,'EKF estimation error'); xlabel(t3, 'Iterations');
 
 
