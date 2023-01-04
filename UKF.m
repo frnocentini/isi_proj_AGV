@@ -135,8 +135,8 @@ function [sample_mean, sample_cov] = UT_F(prior_mean, prior_cov, dt, tau_phi, ta
 
     %Media campionaria
     sample_mean = propagated_sigmapoints*w_mean';
-    sample_mean(3,1) = wrapTo2Pi(atan2(sin(propagated_sigmapoints(3,:)*w_mean'),cos(propagated_sigmapoints(3,:)*w_mean')));
-    sample_mean(5,1) = wrapToPi(atan2(sin(propagated_sigmapoints(5,:)*w_mean'),cos(propagated_sigmapoints(5,:)*w_mean')));
+    sample_mean(3,1) = wrapTo2Pi(atan2(sin(propagated_sigmapoints(3,:))*w_mean',cos(propagated_sigmapoints(3,:))*w_mean'));
+    sample_mean(5,1) = wrapToPi(atan2(sin(propagated_sigmapoints(5,:))*w_mean',cos(propagated_sigmapoints(5,:))*w_mean'));
 
     tilde = propagated_sigmapoints - sample_mean;
 
@@ -283,7 +283,7 @@ function [pred_meas, pred_meas_cov, cross_cov] = UT_H(prior_mean, prior_cov)
 
     %Media campionaria
     pred_meas = propagated_sigmapoints*w_mean';
-    pred_meas(1,1) = wrapToPi(atan2(sin(propagated_sigmapoints(1,:)*w_mean'), cos(propagated_sigmapoints(1,:)*w_mean')));
+    pred_meas(1,1) = wrapToPi(atan2(sin(propagated_sigmapoints(1,:))*w_mean', cos(propagated_sigmapoints(1,:))*w_mean'));
     
     tilde = propagated_sigmapoints - pred_meas;
     tilde(1,:) = wrapToPi(atan2(sin(propagated_sigmapoints(1,:) - pred_meas(1,1)), cos(propagated_sigmapoints(1,:) - pred_meas(1,1))));
