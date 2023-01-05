@@ -11,16 +11,16 @@ psi_real = log_vars.psi_real;
 psi_dot_real = log_vars.psi_dot_real;
 t_max = log_vars.t_max;
 dt = log_vars.dt;
-%innovation_EKF = log_vars.innovation_EKF;
+innovation_EKF = log_vars.innovation_EKF;
 innovation_UKF = log_vars.innovation_UKF;
 dt = log_vars.dt;
 
-% x_estimation_EKF = log_vars.x_estimation_EKF;
-% y_estimation_EKF = log_vars.y_estimation_EKF;
-% theta_estimation_EKF = log_vars.theta_estimation_EKF;
-% phi_dot_estimation_EKF = log_vars.phi_dot_estimation_EKF;
-% psi_estimation_EKF = log_vars.psi_estimation_EKF;
-% psi_dot_estimation_EKF = log_vars.psi_dot_estimation_EKF;
+x_estimation_EKF = log_vars.x_estimation_EKF;
+y_estimation_EKF = log_vars.y_estimation_EKF;
+theta_estimation_EKF = log_vars.theta_estimation_EKF;
+phi_dot_estimation_EKF = log_vars.phi_dot_estimation_EKF;
+psi_estimation_EKF = log_vars.psi_estimation_EKF;
+psi_dot_estimation_EKF = log_vars.psi_dot_estimation_EKF;
 
 
 x_estimation_UKF = log_vars.x_estimation_UKF;
@@ -437,11 +437,11 @@ end
 hold off
 
 %% confronto delle traiettorie
-plot(x_estimation_EKF', y_estimation_EKF')
-plot(x_estimation_UKF', y_estimation_UKF')
+plot(x_estimation_EKF', y_estimation_EKF');hold on;
+plot(x_estimation_UKF', y_estimation_UKF'); hold on;
 plot(x_real', y_real', '--');
 legend('stima EKF','stima UKF', 'groundtruth');
-title(t2,'Innovazione UKF'); xlabel(t2,'Time (s)');
+
 %% Plot della traiettoria risultante dallo stimatore UKF
 close all
 figure(1)
