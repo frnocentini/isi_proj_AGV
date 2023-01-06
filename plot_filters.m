@@ -502,12 +502,6 @@ for k = 1 : size(x_estimation_UKF, 1)
     delete(w_a2)
 end
 
-%% confronto delle traiettorie
-plot(x_estimation_EKF', y_estimation_EKF')
-plot(x_estimation_UKF', y_estimation_UKF')
-plot(x_real', y_real', '--');
-legend('stima EKF','stima UKF', 'groundtruth');
-title(t2,'Innovazione UKF'); xlabel(t2,'Time (s)');
 
 %% confronto tra filtri componente per componente
 
@@ -587,7 +581,7 @@ for i = 1 : size(innovation_EKF,2)
     if innovation_UKF(1,i) == 100
         plot(t,innovation_UKF(1,i),' ');hold on;
     else
-        plot(t,innovation_UKF(1,i),'o','LineWidth',0.6, color = 'm');hold on;
+        plot(t,innovation_UKF(1,i),'o','LineWidth',0.6, color = '[0.4940 0.1840 0.5560]');hold on;
     end
 end
 xlim([0,t_max]); 
@@ -606,7 +600,7 @@ for i = 1 : size(innovation_EKF,2)
     if innovation_UKF(2,i) == 100
         plot(t,innovation_UKF(2,i),' ');hold on;
     else
-        plot(t,innovation_UKF(2,i),'o','LineWidth',0.6, color = 'm');hold on;
+        plot(t,innovation_UKF(2,i),'o','LineWidth',0.6, color = '[0.4940 0.1840 0.5560]');hold on;
     end
 end
 xlim([0,t_max]); 
@@ -630,7 +624,7 @@ for i = 1 : size(innovation_EKF,2)
     if innovation_UKF(3,i) == 100
         plot(t,innovation_UKF(3,i),' ');hold on;
     else
-        plot(t,innovation_UKF(3,i),'o','LineWidth',0.6, color = 'm');hold on;
+        plot(t,innovation_UKF(3,i),'o','LineWidth',0.6, color = '[0.4940 0.1840 0.5560]');hold on;
     end
 end
 xlim([0,t_max]); ylim([-1,1]);
@@ -650,7 +644,7 @@ for i = 1 : size(innovation_EKF,2)
     if innovation_UKF(4,i) == 100
         plot(t,innovation_UKF(4,i),' ');hold on;
     else
-        plot(t,innovation_UKF(4,i),'o','LineWidth',0.6, color = 'm');hold on;
+        plot(t,innovation_UKF(4,i),'o','LineWidth',0.6, color = '[0.4940 0.1840 0.5560]');hold on;
     end
 end
 xlim([0,t_max]); ylim([-1,1]);
