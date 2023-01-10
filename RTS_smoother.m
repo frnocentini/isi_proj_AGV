@@ -92,7 +92,7 @@ coord_wax_1 = [-rp,rp];
 coord_way_1 = [d,d];
 coord_wax_2 = [rp, -rp];
 coord_way_2 = [-d,-d];
-
+%il disegno che vediamo è in scala 1:5 [m]
 scale_factor = 5;
 xlim([min(x_hat_smooth_x-10) max(x_hat_smooth_x+10)])
 ylim([min(x_hat_smooth_y-10) max(x_hat_smooth_y+10)])
@@ -104,14 +104,17 @@ for k = 1 : size(x_hat_smooth_x, 1)
     y = x_hat_smooth_y(k,:);
     psi = x_hat_smooth_psi(k,:);
     R_zt = [cos(th) , -sin(th); sin(th), cos(th)];
+    %rotazione del rettangolo che rappresenta l'agv
     BE_R = scale_factor*R_zt*[coord_BEx; coord_BEy];
     BC_R = scale_factor*R_zt*[coord_BCx; coord_BCy];
     CD_R = scale_factor*R_zt*[coord_CDx; coord_CDy];
     DE_R = scale_factor*R_zt*[coord_DEx; coord_DEy];
+    %rotazione della ruota posteriore
     wp = scale_factor*R_zt*[-L+rp*cos(psi), -L-rp*cos(psi);rp*sin(psi), -rp*sin(psi)];
+    %rotazione ruote anteriori
     wa1 = scale_factor*R_zt*[coord_wax_1; coord_way_1];
     wa2 = scale_factor*R_zt*[coord_wax_2; coord_way_2];
-        
+    %traslazione delle coordinate lungo x e y di tutti i segmenti  
     BE = plot(x+BE_R(1,:),y+BE_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     BC = plot(x+BC_R(1,:),y+BC_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
     CD= plot(x+CD_R(1,:),y+CD_R(2,:), 'LineWidth', 2, color = '[0.4940 0.1840 0.5560]');
